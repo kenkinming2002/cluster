@@ -60,3 +60,13 @@ impl<const N: usize> std::ops::Div<f32> for Vector<N> {
         result
     }
 }
+
+impl<const N: usize> std::iter::Sum for Vector<N> {
+    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
+        let mut result = Self([0.0; N]);
+        for item in iter {
+            result = result + item;
+        }
+        result
+    }
+}

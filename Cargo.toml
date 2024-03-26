@@ -7,3 +7,5 @@ edition = "2021"
 clap = { version = "4.5.4", features = ["derive"] }
 image = "0.25.0"
 rand = "0.8.5"
+rayon = "1.10.0"
+thread_local = "1.1.8"
