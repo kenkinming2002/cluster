@@ -68,10 +68,7 @@ impl<const N: usize> KMeanClusteringState<N> {
             if cluster.count != 0 {
                 cluster.mean = cluster.total / cluster.count as f32;
             } else {
-                let mut rng = thread_rng();
-                for i in 0..N {
-                    cluster.mean.0[i] = rng.gen_range(0.0..=255.0);
-                }
+                cluster.mean = Vector([(); N].map(|_| thread_rng().gen_range(0.0..255.0)));
             }
         }
     }
