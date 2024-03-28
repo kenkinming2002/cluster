@@ -1,4 +1,5 @@
 #![feature(cell_update)]
+#![feature(generic_nonzero)]
 
 pub mod vec;
 pub use vec::Vector;
@@ -13,91 +14,65 @@ use std::cell::Cell;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::AtomicBool;
 
-#[derive(Debug, Default)]
-struct Point<const N: usize> {
-    position : Vector<N>,
-    label : usize,
+use std::num::NonZero;
+
+pub struct KMeanClustering<const N: usize> {
+    pub labels : Vec<usize>,
+    pub means : Vec<Vector<N>>,
 }
 
-#[derive(Debug, Default)]
-struct Cluster<const N: usize> {
-    mean : Vector<N>,
-    total : ThreadLocal<Cell<Vector<N>>>,
-    count : ThreadLocal<Cell<usize>>,
+fn random_vector<const N: usize>() -> Vector<N> {
+    Vector([(); N].map(|_| thread_rng().gen_range(0.0..255.0)))
 }
 
-#[derive(Debug, Default)]
-pub struct KMeanClusteringState<const N: usize> {
-    points : Vec<Point<N>>,
-    clusters : Vec<Cluster<N>>,
-    updated : AtomicBool,
-}
+pub fn k_mean_clustering<const N: usize>(positions : &[Vector<N>], k : NonZero<usize>) -> KMeanClustering<N> {
+    let mut labels : Vec<usize> = vec![Default::default(); positions.len()];
 
-impl<const N: usize> KMeanClusteringState<N> {
-    pub fn new<P, M>(positions : P, means : M) -> Self
-    where
-        P: IntoIterator<Item = Vector<N>>,
-        M: IntoIterator<Item = Vector<N>>,
-    {
-        Self {
-            points   : positions.into_iter().map(|position| Point   { position, ..Default::default() }).collect(),
-            clusters : means    .into_iter().map(|mean|     Cluster { mean,     ..Default::default() }).collect(),
-            ..Default::default()
-        }
-    }
+    let mut means  : Vec<Vector<N>>                    = (0..k.get()).map(|_| random_vector()).collect();
+    let mut totals : Vec<ThreadLocal<Cell<Vector<N>>>> = (0..k.get()).map(|_| Default::default()).collect();
+    let mut counts : Vec<ThreadLocal<Cell<usize>>>     = (0..k.get()).map(|_| Default::default()).collect();
 
-    fn reset(&mut self) {
-        for cluster in self.clusters.iter_mut() {
-            cluster.total.clear();
-            cluster.count.clear();
-        }
-        self.updated = AtomicBool::from(false);
-    }
+    loop {
+        // 0: Reset
+        std::iter::zip(&mut totals, &mut counts).par_bridge().for_each(|(total, count)| {
+            total.iter_mut().for_each(|total| *total = Default::default());
+            count.iter_mut().for_each(|count| *count = Default::default());
+        });
 
-    fn update_label(&mut self) {
-        self.points.par_iter_mut().for_each(|point| {
-            let new_label = self.clusters.iter()
-                                         .map(|cluster| (cluster.mean - point.position).length_squared())
-                                         .enumerate()
-                                         .min_by(|(_, distance_squared1), (_, distance_squared2)| distance_squared1.total_cmp(distance_squared2))
-                                         .map(|(index, _)| index)
-                                         .unwrap();
+        // 1: Update labels
+        let mut updated = AtomicBool::new(false);
+        std::iter::zip(&mut labels, positions).par_bridge().for_each(|(label, position)| {
+            let new_label = means.iter()
+                .map(|mean| (*mean - *position).length_squared())
+                .enumerate()
+                .min_by(|(_, distance_squared1), (_, distance_squared2)| distance_squared1.total_cmp(distance_squared2))
+                .map(|(index, _)| index)
+                .unwrap();
 
-            self.clusters[new_label].total.get_or_default().update(|total| total + point.position);
-            self.clusters[new_label].count.get_or_default().update(|count| count + 1);
-            if point.label != new_label {
-                point.label = new_label;
-                self.updated.store(true, Ordering::Relaxed);
+            totals[new_label].get_or_default().update(|total| total + *position);
+            counts[new_label].get_or_default().update(|count| count + 1);
+
+            if *label != new_label {
+                *label = new_label;
+                updated.store(true, Ordering::Relaxed);
             }
         });
-    }
 
-    fn update_mean(&mut self) {
-        for cluster in self.clusters.iter_mut() {
-            let total = cluster.total.iter_mut().map(|total| total.get()).sum::<Vector<N>>();
-            let count = cluster.count.iter_mut().map(|count| count.get()).sum::<usize>();
-            cluster.mean = if count != 0 {
+        // 2: Update means
+        std::iter::zip(&mut means, std::iter::zip(&mut totals, &mut counts)).par_bridge().for_each(|(mean, (total, count))| {
+            let total = total.iter_mut().map(|total| total.get()).sum::<Vector<N>>();
+            let count = count.iter_mut().map(|count| count.get()).sum::<usize>();
+            *mean = if count != 0 {
                 total / count as f32
             } else {
-                Vector([(); N].map(|_| thread_rng().gen_range(0.0..255.0)))
+                random_vector()
             }
+        });
+
+        // 3: Check
+        if !*updated.get_mut() {
+            break KMeanClustering { labels, means }
         }
-    }
-
-    pub fn step(&mut self) -> bool {
-        self.reset();
-        self.update_label();
-        self.update_mean();
-
-        *self.updated.get_mut()
-    }
-
-    pub fn labels(&self) -> impl Iterator<Item = usize> + '_ {
-        self.points.iter().map(|point| point.label)
-    }
-
-    pub fn means(&self) -> impl Iterator<Item = Vector<N>> + '_ {
-        self.clusters.iter().map(|cluster| cluster.mean)
     }
 }
 

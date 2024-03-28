@@ -1,7 +1,8 @@
 #![feature(generic_nonzero)]
 
-use k_mean_clustering::KMeanClusteringState;
 use k_mean_clustering::Vector;
+use k_mean_clustering::KMeanClustering;
+use k_mean_clustering::k_mean_clustering;
 
 use image::io::Reader as ImageReader;
 
@@ -13,8 +14,6 @@ use image::Rgba;
 
 use image::DynamicImage;
 use image::ImageBuffer;
-
-use rand::prelude::*;
 
 use std::path::PathBuf;
 
@@ -101,16 +100,11 @@ fn posterize<I, const CHANNEL_COUNT : usize>(image : &mut I, k : NonZero<usize>)
 where
     I: MyImage<CHANNEL_COUNT>
 {
-    let mut rng = thread_rng();
+    let positions = image.pixels().map(|pixel| Vector(pixel.into_array())).collect::<Vec<_>>();
+    let KMeanClustering { labels, means } = k_mean_clustering(&positions, k);
 
-    let positions = image.pixels().map(|pixel| Vector(pixel.into_array()));
-    let means     = (0..k.get()).map(|_| Vector([(); CHANNEL_COUNT].map(|_| rng.gen_range(0.0..255.0))));
-
-    let mut state = KMeanClusteringState::new(positions, means);
-    while state.step() {}
-
-    for (pixel, label) in std::iter::zip(image.pixels_mut(), state.labels()) {
-        *pixel = I::Pixel::from_array(state.means().nth(label).unwrap().0);
+    for (pixel, label) in std::iter::zip(image.pixels_mut(), labels) {
+        *pixel = I::Pixel::from_array(means[label].0);
     }
 }
 
