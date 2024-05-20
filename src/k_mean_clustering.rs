@@ -1,11 +1,8 @@
 use crate::Vector;
+use crate::Counter;
 
 use rand::prelude::*;
 use rayon::prelude::*;
-
-use thread_local::ThreadLocal;
-
-use std::cell::Cell;
 
 use std::sync::atomic::Ordering;
 use std::sync::atomic::AtomicBool;
@@ -24,17 +21,11 @@ fn random_vector<const N: usize>() -> Vector<N> {
 pub fn k_mean_clustering<const N: usize>(values : &[Vector<N>], k : NonZero<usize>) -> KMeanClustering<N> {
     let mut labels : Vec<usize> = vec![Default::default(); values.len()];
 
-    let mut means  : Vec<Vector<N>>                    = (0..k.get()).map(|_| random_vector()).collect();
-    let mut totals : Vec<ThreadLocal<Cell<Vector<N>>>> = (0..k.get()).map(|_| Default::default()).collect();
-    let mut counts : Vec<ThreadLocal<Cell<usize>>>     = (0..k.get()).map(|_| Default::default()).collect();
+    let mut means  : Vec<Vector<N>>          = (0..k.get()).map(|_| random_vector()).collect();
+    let mut totals : Vec<Counter<Vector<N>>> = (0..k.get()).map(|_| Default::default()).collect();
+    let mut counts : Vec<Counter<usize>>     = (0..k.get()).map(|_| Default::default()).collect();
 
     loop {
-        // 0: Reset
-        std::iter::zip(&mut totals, &mut counts).par_bridge().for_each(|(total, count)| {
-            total.iter_mut().for_each(|total| *total = Default::default());
-            count.iter_mut().for_each(|count| *count = Default::default());
-        });
-
         // 1: Update labels
         let mut updated = AtomicBool::new(false);
         std::iter::zip(&mut labels, values).par_bridge().for_each(|(label, value)| {
@@ -45,8 +36,8 @@ pub fn k_mean_clustering<const N: usize>(values : &[Vector<N>], k : NonZero<usiz
                 .map(|(index, _)| index)
                 .unwrap();
 
-            totals[new_label].get_or_default().update(|total| total + *value);
-            counts[new_label].get_or_default().update(|count| count + 1);
+            totals[new_label].add(*value);
+            counts[new_label].add(1);
 
             if *label != new_label {
                 *label = new_label;
@@ -56,8 +47,8 @@ pub fn k_mean_clustering<const N: usize>(values : &[Vector<N>], k : NonZero<usiz
 
         // 2: Update means
         std::iter::zip(&mut means, std::iter::zip(&mut totals, &mut counts)).par_bridge().for_each(|(mean, (total, count))| {
-            let total = total.iter_mut().map(|total| total.get()).sum::<Vector<N>>();
-            let count = count.iter_mut().map(|count| count.get()).sum::<usize>();
+            let total = total.sum::<Vector<N>>();
+            let count = count.sum::<usize>();
             *mean = if count != 0 {
                 total / count as f32
             } else {
