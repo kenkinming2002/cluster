@@ -2,6 +2,7 @@
 #![feature(cell_update)]
 #![feature(generic_nonzero)]
 #![feature(generic_const_exprs)]
+#![feature(impl_trait_in_assoc_type)]
 
 mod vec;
 mod counter;
@@ -15,7 +16,6 @@ mod posterize;
 use vec::Vector;
 use counter::Counter;
 use k_mean_clustering::KMeanClustering;
-use k_mean_clustering::k_mean_clustering;
 
 pub use convert::Convert;
 pub use pixel::Pixel;
