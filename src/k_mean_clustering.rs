@@ -1,6 +1,7 @@
 use crate::Vector;
 use crate::Counter;
 
+use itertools::Itertools;
 use rand::prelude::*;
 use rayon::prelude::*;
 
@@ -18,48 +19,57 @@ fn random_vector<const N: usize>() -> Vector<N> {
     Vector([(); N].map(|_| thread_rng().gen_range(0.0..255.0)))
 }
 
-pub fn k_mean_clustering<const N: usize>(values : &[Vector<N>], k : NonZero<usize>) -> KMeanClustering<N> {
-    let mut labels : Vec<usize> = vec![Default::default(); values.len()];
+struct Sample<const N: usize> {
+    value : Vector<N>,
+    label : usize,
+}
 
-    let mut means  : Vec<Vector<N>>          = (0..k.get()).map(|_| random_vector()).collect();
-    let mut totals : Vec<Counter<Vector<N>>> = (0..k.get()).map(|_| Default::default()).collect();
-    let mut counts : Vec<Counter<usize>>     = (0..k.get()).map(|_| Default::default()).collect();
+struct Cluster<const N: usize> {
+    mean : Vector<N>,
+    total : Counter<Vector<N>>,
+    count : Counter<usize>,
+}
 
+pub fn k_mean_clustering<const N: usize, I>(values : I, k : NonZero<usize>) -> KMeanClustering<N>
+where
+    I: IntoIterator<Item = Vector<N>>
+{
+    let mut clusters = (0..k.get()).map(|_| Cluster { mean : random_vector(), total : Default::default(), count : Default::default(), }).collect::<Vec<_>>();
+    let mut samples  = values.into_iter().map(|value| Sample { value, label : 0, }).collect::<Vec<_>>();
     loop {
-        // 1: Update labels
-        let mut updated = AtomicBool::new(false);
-        std::iter::zip(&mut labels, values).par_bridge().for_each(|(label, value)| {
-            let new_label = means.iter()
-                .map(|mean| (*mean - *value).length_squared())
-                .enumerate()
-                .min_by(|(_, distance_squared1), (_, distance_squared2)| distance_squared1.total_cmp(distance_squared2))
-                .map(|(index, _)| index)
-                .unwrap();
+        let updated = AtomicBool::new(false);
 
-            totals[new_label].add(*value);
-            counts[new_label].add(1);
+        // 1: Update label for each sample and corresponding counter in each cluster
+        samples.par_iter_mut().for_each(|sample| {
+            let label = clusters.iter()
+                                .map(|cluster| (cluster.mean - sample.value).length_squared()) // Compute squared distance to each cluster
+                                .position_min_by(f32::total_cmp).unwrap();                     // Get index of minimum element
 
-            if *label != new_label {
-                *label = new_label;
+            clusters[label].total.add(sample.value);
+            clusters[label].count.add(1);
+            if sample.label != label {
+                sample.label = label;
                 updated.store(true, Ordering::Relaxed);
             }
         });
 
-        // 2: Update means
-        std::iter::zip(&mut means, std::iter::zip(&mut totals, &mut counts)).par_bridge().for_each(|(mean, (total, count))| {
-            let total = total.sum::<Vector<N>>();
-            let count = count.sum::<usize>();
-            *mean = if count != 0 {
+        // 2: Check termination
+        if !updated.into_inner() {
+            let means = clusters.into_iter().map(|cluster| cluster.mean).collect::<Vec<_>>();
+            let labels = samples.into_iter().map(|sample| sample.label).collect::<Vec<_>>();
+            break KMeanClustering { labels, means }
+        }
+
+        // 3: Update clusters mean
+        clusters.par_iter_mut().for_each(|cluster| {
+            let total = cluster.total.sum::<Vector<N>>();
+            let count = cluster.count.sum::<usize>();
+            cluster.mean = if count != 0 {
                 total / count as f32
             } else {
                 random_vector()
             }
         });
-
-        // 3: Check
-        if !*updated.get_mut() {
-            break KMeanClustering { labels, means }
-        }
     }
 }
 

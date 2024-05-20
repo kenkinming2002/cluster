@@ -22,9 +22,8 @@ where
     C: Convert<f32>, f32: Convert<C>,
     [P::Component; P::COMPONENT_COUNT] : ,
 {
-    // The curse of strong typing means that we have to do stupid things like this.
-    let values = image.pixels().map(|x| Vector(x.into_array().map(|x| x.convert()))).collect::<Vec<_>>();
-    let KMeanClustering { labels, means } = k_mean_clustering(&values, k);
+    let values = image.pixels().map(|x| Vector(x.into_array().map(|x| x.convert())));
+    let KMeanClustering { labels, means } = k_mean_clustering(values, k);
     for (pixel, label) in std::iter::zip(image.pixels_mut(), labels) {
         *pixel = P::from_array(means[label].0.map(|x| x.convert()));
     }
