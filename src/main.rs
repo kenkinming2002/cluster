@@ -10,10 +10,14 @@ use std::num::NonZero;
 
 use clap::Parser;
 
+/// Posterize an image using k-mean-clustering algorithm.
 #[derive(Parser)]
 struct Cli {
+    /// Input filepath
     input : PathBuf,
+    /// Output filepath
     output : PathBuf,
+    /// Number of color in output image/Parameter in k-mean-clustering algorithm
     k : NonZero<usize>,
 }
 
