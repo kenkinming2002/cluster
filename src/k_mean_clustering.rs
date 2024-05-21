@@ -33,11 +33,9 @@ impl<const N: usize> KMeanClustering<N> {
         VS: IntoIterator<Item = Vector<N>>,
         MS: IntoIterator<Item = Vector<N>>,
     {
-        Self {
-            samples : values.into_iter().map(|value| Sample { value, label : 0, }).collect(),
-            clusters : means.into_iter().map(|mean| Cluster { mean, total : Default::default(), count : Default::default(), } ).collect(),
-            done : AtomicBool::new(false),
-        }
+        let clusters = means.into_iter().map(|mean| Cluster { mean, total : Default::default(), count : Default::default(), } ).collect::<Vec<_>>();
+        let samples = values.into_iter().map(|value| Sample { value, label : clusters.len(), }).collect();
+        Self { samples, clusters, done : AtomicBool::new(false), }
     }
 
     pub fn update_label(&mut self) {
