@@ -3,7 +3,7 @@ use crate::Pixel;
 use crate::Image;
 
 use crate::Vector;
-use crate::KMeanClustering;
+use crate::KMeanClusteringState;
 
 use rand::prelude::*;
 
@@ -28,13 +28,12 @@ where
     [P::Component; P::COMPONENT_COUNT] : ,
 {
     let values = image.pixels().map(|x| Vector(x.into_array().map(|x| x.convert())));
-    let means  = (0..k.into()).map(|_| random_vector());
 
-    let mut k_mean_clustering = KMeanClustering::new(values, means);
-    k_mean_clustering.run(|| random_vector());
+    let state = KMeanClusteringState::new(random_vector, k, values);
+    let state = state.run();
 
-    let labels = k_mean_clustering.labels();
-    let means  = k_mean_clustering.means();
+    let labels = state.labels();
+    let means  = state.means();
     for (pixel, label) in std::iter::zip(image.pixels_mut(), labels) {
         *pixel = P::from_array(means[label].0.map(|x| x.convert()));
     }

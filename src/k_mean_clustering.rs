@@ -7,6 +7,8 @@ use rayon::prelude::*;
 use std::sync::atomic::Ordering;
 use std::sync::atomic::AtomicBool;
 
+use std::num::NonZero;
+
 struct Sample<const N: usize> {
     value : Vector<N>,
     label : usize,
@@ -18,27 +20,38 @@ struct Cluster<const N: usize> {
     count : Counter<usize>,
 }
 
-pub struct KMeanClustering<const N: usize> {
+pub struct KMeanClusteringState<const N: usize, F> {
+    init : F,
     samples : Vec<Sample<N>>,
     clusters : Vec<Cluster<N>>,
-    done : AtomicBool,
 }
 
-pub struct Labels<'a, const N: usize>(&'a KMeanClustering<N>);
-pub struct Means<'a, const N: usize>(&'a KMeanClustering<N>);
+pub enum KMeanClusteringResult<const N: usize, F> {
+    Incomplete(KMeanClusteringState<N, F>),
+    Done(KMeanClusteringState<N, F>),
+}
 
-impl<const N: usize> KMeanClustering<N> {
-    pub fn new<VS, MS>(values : VS, means : MS) -> Self
+pub struct Labels<'a, const N: usize, F>(&'a KMeanClusteringState<N, F>);
+pub struct Means<'a, const N: usize, F>(&'a KMeanClusteringState<N, F>);
+
+impl<const N: usize, F> KMeanClusteringState<N, F> {
+    pub fn new<I>(init : F, k : NonZero<usize>, values : I) -> Self
     where
-        VS: IntoIterator<Item = Vector<N>>,
-        MS: IntoIterator<Item = Vector<N>>,
+        F: Fn() -> Vector<N> + Sync,
+        I: IntoIterator<Item = Vector<N>>,
     {
-        let clusters = means.into_iter().map(|mean| Cluster { mean, total : Default::default(), count : Default::default(), } ).collect::<Vec<_>>();
+        let clusters = (0..k.into()).map(|_| Cluster { mean : init(), total : Default::default(), count : Default::default(), }).collect::<Vec<_>>();
         let samples = values.into_iter().map(|value| Sample { value, label : clusters.len(), }).collect();
-        Self { samples, clusters, done : AtomicBool::new(false), }
+        Self { init, samples, clusters, }
     }
 
-    pub fn update_label(&mut self) {
+    pub fn update(mut self) -> KMeanClusteringResult<N, F>
+    where
+        F: Fn() -> Vector<N> + Sync,
+    {
+        let done = AtomicBool::new(true);
+
+        // 1: Update sample labels
         self.samples.par_iter_mut().for_each(|sample| {
             let label = self.clusters.iter()
                 .map(|cluster| (cluster.mean - sample.value).length_squared()) // Compute squared distance to each cluster
@@ -48,73 +61,64 @@ impl<const N: usize> KMeanClustering<N> {
             self.clusters[label].count.add(1);
             if sample.label != label {
                 sample.label = label;
-                self.done.store(false, Ordering::Relaxed);
+                done.store(false, Ordering::Relaxed);
             }
         });
 
-    }
+        if done.into_inner() {
+            return KMeanClusteringResult::Done(self)
+        }
 
-    pub fn update_mean<F>(&mut self, init : F)
-    where
-        F: Fn() -> Vector<N> + Sync
-    {
+        // 2: Update cluster means
         self.clusters.par_iter_mut().for_each(|cluster| {
             let total = cluster.total.sum::<Vector<N>>();
             let count = cluster.count.sum::<usize>();
             cluster.mean = if count != 0 {
                 total / count as f32
             } else {
-                init()
+                (self.init)()
             };
         });
+
+        KMeanClusteringResult::Incomplete(self)
     }
 
-    pub fn update<F>(&mut self, init : F)
+    pub fn run(mut self) -> Self
     where
-        F: Fn() -> Vector<N> + Sync
+        F: Fn() -> Vector<N> + Sync,
     {
-        self.done = AtomicBool::new(true);
-        self.update_label();
-        self.update_mean(init);
-    }
-
-    pub fn run<F>(&mut self, init : F)
-    where
-        F: Fn() -> Vector<N> + Sync
-    {
-        while !self.done() {
-            self.update(&init);
+        loop {
+            self = match self.update() {
+                KMeanClusteringResult::Incomplete(this) => this,
+                KMeanClusteringResult::Done(this) => break this,
+            }
         }
     }
 
-    pub fn done(&mut self) -> bool {
-        std::mem::take(&mut self.done).into_inner()
+    pub fn labels(&self) -> Labels<'_, N, F> {
+        Labels(self)
     }
 
-    pub fn labels(&self) -> Labels<'_, N> {
-        Labels(&self)
-    }
-
-    pub fn means(&self) -> Means<'_, N> {
-        Means(&self)
+    pub fn means(&self) -> Means<'_, N, F> {
+        Means(self)
     }
 }
 
-impl<const N: usize> std::ops::Index<usize> for Labels<'_, N> {
+impl<const N: usize, F> std::ops::Index<usize> for Labels<'_, N, F> {
     type Output = usize;
     fn index(&self, index: usize) -> &Self::Output {
         &self.0.samples[index].label
     }
 }
 
-impl<const N: usize> std::ops::Index<usize> for Means<'_, N> {
+impl<const N: usize, F> std::ops::Index<usize> for Means<'_, N, F> {
     type Output = Vector<N>;
     fn index(&self, index: usize) -> &Self::Output {
         &self.0.clusters[index].mean
     }
 }
 
-impl<const N: usize> IntoIterator for Labels<'_, N> {
+impl<const N: usize, F> IntoIterator for Labels<'_, N, F> {
     type Item = usize;
     type IntoIter = impl Iterator<Item = Self::Item>;
     fn into_iter(self) -> Self::IntoIter {
@@ -122,7 +126,7 @@ impl<const N: usize> IntoIterator for Labels<'_, N> {
     }
 }
 
-impl<const N: usize> IntoIterator for Means<'_, N> {
+impl<const N: usize, F> IntoIterator for Means<'_, N, F> {
     type Item = Vector<N>;
     type IntoIter = impl Iterator<Item = Self::Item>;
     fn into_iter(self) -> Self::IntoIter {
