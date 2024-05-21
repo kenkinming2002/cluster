@@ -4,7 +4,7 @@
 #![feature(generic_const_exprs)]
 #![feature(impl_trait_in_assoc_type)]
 
-mod vec;
+mod vector;
 mod counter;
 mod k_mean_clustering;
 
@@ -13,7 +13,7 @@ mod pixel;
 mod image;
 mod posterize;
 
-use vec::Vector;
+use vector::Vector;
 use counter::Counter;
 use k_mean_clustering::KMeanClustering;
 
