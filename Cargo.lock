@@ -473,18 +473,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5d4a7da358eff58addd2877a45865158f0d78c911d43a5784ceb7bbf52833b0"
 
 [[package]]
-name = "k-mean-clustering"
-version = "0.1.0"
-dependencies = [
- "clap",
- "image",
- "itertools 0.13.0",
- "rand",
- "rayon",
- "thread_local",
-]
-
-[[package]]
 name = "lebe"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -667,6 +655,18 @@ dependencies = [
  "fdeflate",
  "flate2",
  "miniz_oxide",
+]
+
+[[package]]
+name = "posterize"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "image",
+ "itertools 0.13.0",
+ "rand",
+ "rayon",
+ "thread_local",
 ]
 
 [[package]]

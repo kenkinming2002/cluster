@@ -1,6 +1,6 @@
 #![feature(generic_nonzero)]
 
-use k_mean_clustering::posterize;
+use posterize::posterize;
 
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
