@@ -28,7 +28,7 @@ where
     let cluster_count = k;
 
     let values = image.pixels().flat_map(|x| x.into_array()).map(|x| x.convert()).collect::<Vec<f32>>();
-    let kmean  = KMean::new(sample_count, sample_dimension, cluster_count, values).init_llyod(&mut rng).run();
+    let kmean  = KMean::<{P::COMPONENT_COUNT}>::new(sample_count,  cluster_count, values).init_llyod(&mut rng).run();
 
     let pixels = image.pixels_mut();
     let labels = kmean.labels().iter();

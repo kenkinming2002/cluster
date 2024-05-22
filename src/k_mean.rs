@@ -5,9 +5,8 @@ use rand::prelude::*;
 use rayon::prelude::*;
 use itertools::Itertools;
 
-pub struct KMean {
+pub struct KMean<const D : usize> {
     sample_count     : usize,
-    sample_dimension : usize,
     cluster_count    : usize,
 
     values : Box<[f32]>,
@@ -15,17 +14,17 @@ pub struct KMean {
     means  : Box<[f32]>,
 }
 
-impl KMean {
-    pub fn new(sample_count : usize, sample_dimension : usize, cluster_count : NonZero<usize>, values : impl Into<Box<[f32]>>) -> Self {
+impl<const D : usize> KMean<D> {
+    pub fn new(sample_count : usize, cluster_count : NonZero<usize>, values : impl Into<Box<[f32]>>) -> Self {
         let cluster_count = cluster_count.get();
         let values = values.into();
 
-        assert!(values.len() == sample_count * sample_dimension);
+        assert!(values.len() == sample_count * D);
 
         let labels = unsafe { Box::new_uninit_slice(sample_count).assume_init() };
-        let means  = unsafe { Box::new_uninit_slice(cluster_count * sample_dimension).assume_init() };
+        let means  = unsafe { Box::new_uninit_slice(cluster_count * D).assume_init() };
 
-        Self { sample_count, sample_dimension, cluster_count, values, labels, means, }
+        Self { sample_count, cluster_count, values, labels, means, }
     }
 
     pub fn init_llyod<R>(mut self, rng : &mut R) -> Self
@@ -33,8 +32,8 @@ impl KMean {
         R: Rng + ?Sized,
     {
         self.labels.fill(self.cluster_count);
-        self.means.chunks_exact_mut(self.sample_dimension).for_each(|mean| {
-            mean.copy_from_slice(self.values.chunks_exact(self.sample_dimension).choose(rng).unwrap());
+        self.means.chunks_exact_mut(D).for_each(|mean| {
+            mean.copy_from_slice(self.values.chunks_exact(D).choose(rng).unwrap());
         });
         self
     }
@@ -42,14 +41,14 @@ impl KMean {
     pub fn run(mut self) -> Self {
         loop {
             // 1: Update labels
-            let values = self.values.par_chunks_exact(self.sample_dimension);
+            let values = self.values.par_chunks_exact(D);
             let labels = self.labels.par_iter_mut();
             let updated = (values, labels)
                 .into_par_iter()
                 .map(|(value, label)| {
                     let old_label = *label;
                     let new_label = self.means
-                        .chunks_exact(self.sample_dimension)
+                        .chunks_exact(D)
                         .map(|mean| std::iter::zip(mean, value).map(|(x, y)| *x - *y).map(|x| x * x).sum()) // Get squared distance to each cluster
                         .position_min_by(f32::total_cmp).unwrap();                                          // Get index of minimum element
 
@@ -63,17 +62,17 @@ impl KMean {
             }
 
             // 2: Update means
-            let init_totals = || vec![0.0; self.cluster_count * self.sample_dimension].into_boxed_slice();
+            let init_totals = || vec![0.0; self.cluster_count * D].into_boxed_slice();
             let init_counts = || vec![0; self.cluster_count].into_boxed_slice();
             let init = || (init_totals(), init_counts());
 
-            let values = self.values.par_chunks_exact(self.sample_dimension);
+            let values = self.values.par_chunks_exact(D);
             let labels = self.labels.par_iter();
             let (totals, counts) = (values, labels)
                 .into_par_iter()
                 .fold(init, |(mut totals, mut counts), (value, label)| {
 
-                    let total = &mut totals[self.sample_dimension * *label..self.sample_dimension * (*label + 1)];
+                    let total = &mut totals[D * *label..D * (*label + 1)];
                     let count = &mut counts[*label];
 
                     total.iter_mut().zip(value).for_each(|(x, y)| *x += *y);
@@ -83,8 +82,8 @@ impl KMean {
                 })
                 .reduce(init, |(mut totals1, mut counts1), (totals2, counts2)| {
                     {
-                        let totals1 = totals1.chunks_exact_mut(self.sample_dimension);
-                        let totals2 = totals2.chunks_exact(self.sample_dimension);
+                        let totals1 = totals1.chunks_exact_mut(D);
+                        let totals2 = totals2.chunks_exact(D);
 
                         let counts1 = counts1.iter_mut();
                         let counts2 = counts2.iter();
@@ -95,8 +94,8 @@ impl KMean {
                     (totals1, counts1)
                 });
 
-            let means = self.means.chunks_exact_mut(self.sample_dimension);
-            let totals = totals.chunks_exact(self.sample_dimension);
+            let means = self.means.chunks_exact_mut(D);
+            let totals = totals.chunks_exact(D);
             let counts = counts.iter();
             itertools::izip!(means, totals, counts).for_each(|(mean, total, count)| std::iter::zip(mean, total).for_each(|(x, y)| if *count != 0 { *x = *y / *count as f32 }));
         }
@@ -107,7 +106,7 @@ impl KMean {
     }
 
     pub fn sample_dimension(&self) -> usize {
-        self.sample_dimension
+        D
     }
 
     pub fn cluster_count(&self) -> usize {
