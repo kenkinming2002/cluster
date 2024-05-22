@@ -1,17 +1,11 @@
 use crate::Convert;
 use crate::Pixel;
 use crate::Image;
-
-use crate::Vector;
-use crate::KMeanClusteringState;
+use crate::KMean;
 
 use rand::prelude::*;
 
 use std::num::NonZero;
-
-fn random_vector<const N: usize>() -> Vector<N> {
-    Vector([(); N].map(|_| thread_rng().gen_range(0.0..255.0)))
-}
 
 /// Posterize an image.
 ///
@@ -27,15 +21,25 @@ where
     C: Convert<f32>, f32: Convert<C>,
     [P::Component; P::COMPONENT_COUNT] : ,
 {
-    let values = image.pixels().map(|x| Vector(x.into_array().map(|x| x.convert())));
+    let mut rng = thread_rng();
 
-    let state = KMeanClusteringState::new(random_vector, k, values);
-    let state = state.run();
+    let sample_count = image.width() * image.height();
+    let sample_dimension = P::COMPONENT_COUNT;
+    let cluster_count = k;
 
-    let labels = state.labels();
-    let means  = state.means();
-    for (pixel, label) in std::iter::zip(image.pixels_mut(), labels) {
-        *pixel = P::from_array(means[label].0.map(|x| x.convert()));
+    let values = image.pixels().flat_map(|x| x.into_array()).map(|x| x.convert()).collect::<Vec<f32>>();
+    let kmean  = KMean::new(sample_count, sample_dimension, cluster_count, values).init_llyod(&mut rng).run();
+
+    let pixels = image.pixels_mut();
+    let labels = kmean.labels().iter();
+    for (pixel, label) in std::iter::zip(pixels, labels) {
+        let mut means = kmean.means().chunks_exact(sample_dimension);
+
+        let mean = means.nth(*label).unwrap();
+        let mean = TryInto::<[_; P::COMPONENT_COUNT]>::try_into(mean).unwrap();
+        let mean = mean.map(|x| x.convert());
+
+        *pixel = P::from_array(mean);
     }
 }
 
