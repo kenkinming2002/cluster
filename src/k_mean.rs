@@ -1,28 +1,27 @@
+use crate::Vector;
+
 use std::num::NonZero;
-use std::ops::AddAssign;
 
 use rand::prelude::*;
 use rayon::prelude::*;
 use itertools::Itertools;
 
-pub struct KMean<const D : usize> {
+pub struct KMean<const N : usize> {
     sample_count     : usize,
     cluster_count    : usize,
 
-    values : Box<[f32]>,
+    values : Box<[Vector<N>]>,
     labels : Box<[usize]>,
-    means  : Box<[f32]>,
+    means  : Box<[Vector<N>]>,
 }
 
-impl<const D : usize> KMean<D> {
-    pub fn new(sample_count : usize, cluster_count : NonZero<usize>, values : impl Into<Box<[f32]>>) -> Self {
+impl<const N : usize> KMean<N> {
+    pub fn new(sample_count : usize, cluster_count : NonZero<usize>, values : impl Into<Box<[Vector<N>]>>) -> Self {
         let cluster_count = cluster_count.get();
         let values = values.into();
 
-        assert!(values.len() == sample_count * D);
-
         let labels = unsafe { Box::new_uninit_slice(sample_count).assume_init() };
-        let means  = unsafe { Box::new_uninit_slice(cluster_count * D).assume_init() };
+        let means  = unsafe { Box::new_uninit_slice(cluster_count).assume_init() };
 
         Self { sample_count, cluster_count, values, labels, means, }
     }
@@ -32,25 +31,23 @@ impl<const D : usize> KMean<D> {
         R: Rng + ?Sized,
     {
         self.labels.fill(self.cluster_count);
-        self.means.chunks_exact_mut(D).for_each(|mean| {
-            mean.copy_from_slice(self.values.chunks_exact(D).choose(rng).unwrap());
-        });
+        self.means.iter_mut().for_each(|mean| *mean = *self.values.choose(rng).unwrap());
         self
     }
 
     pub fn run(mut self) -> Self {
         loop {
             // 1: Update labels
-            let values = self.values.par_chunks_exact(D);
+            let values = self.values.par_iter();
             let labels = self.labels.par_iter_mut();
             let updated = (values, labels)
                 .into_par_iter()
                 .map(|(value, label)| {
                     let old_label = *label;
                     let new_label = self.means
-                        .chunks_exact(D)
-                        .map(|mean| std::iter::zip(mean, value).map(|(x, y)| *x - *y).map(|x| x * x).sum()) // Get squared distance to each cluster
-                        .position_min_by(f32::total_cmp).unwrap();                                          // Get index of minimum element
+                        .iter()
+                        .map(|mean| (*mean - *value).length_squared()) // Get squared distance to each cluster
+                        .position_min_by(f32::total_cmp).unwrap();     // Get index of minimum element
 
                     *label = new_label;
                     new_label != old_label
@@ -62,42 +59,35 @@ impl<const D : usize> KMean<D> {
             }
 
             // 2: Update means
-            let init_totals = || vec![0.0; self.cluster_count * D].into_boxed_slice();
-            let init_counts = || vec![0; self.cluster_count].into_boxed_slice();
+            let init_totals = || vec![Vector::default(); self.cluster_count * N].into_boxed_slice();
+            let init_counts = || vec![usize::default(); self.cluster_count].into_boxed_slice();
             let init = || (init_totals(), init_counts());
 
-            let values = self.values.par_chunks_exact(D);
+            let values = self.values.par_iter();
             let labels = self.labels.par_iter();
             let (totals, counts) = (values, labels)
                 .into_par_iter()
                 .fold(init, |(mut totals, mut counts), (value, label)| {
-
-                    let total = &mut totals[D * *label..D * (*label + 1)];
-                    let count = &mut counts[*label];
-
-                    total.iter_mut().zip(value).for_each(|(x, y)| *x += *y);
-                    count.add_assign(1);
+                    totals[*label] = totals[*label] + *value;
+                    counts[*label] = counts[*label] + 1;
 
                     (totals, counts)
                 })
                 .reduce(init, |(mut totals1, mut counts1), (totals2, counts2)| {
-                    {
-                        let totals1 = totals1.chunks_exact_mut(D);
-                        let totals2 = totals2.chunks_exact(D);
+                    std::iter::zip(totals1.iter_mut(), totals2.iter()).for_each(|(total1, total2)| *total1 = *total1 + *total2);
+                    std::iter::zip(counts1.iter_mut(), counts2.iter()).for_each(|(count1, count2)| *count1 = *count1 + *count2);
 
-                        let counts1 = counts1.iter_mut();
-                        let counts2 = counts2.iter();
-
-                        std::iter::zip(totals1, totals2).for_each(|(total1, total2)| std::iter::zip(total1, total2).for_each(|(x, y)| *x += *y));
-                        std::iter::zip(counts1, counts2).for_each(|(count1, count2)| *count1 += *count2);
-                    }
                     (totals1, counts1)
                 });
 
-            let means = self.means.chunks_exact_mut(D);
-            let totals = totals.chunks_exact(D);
+            let means = self.means.iter_mut();
+            let totals = totals.iter();
             let counts = counts.iter();
-            itertools::izip!(means, totals, counts).for_each(|(mean, total, count)| std::iter::zip(mean, total).for_each(|(x, y)| if *count != 0 { *x = *y / *count as f32 }));
+            for (mean, total, count) in itertools::izip!(means, totals, counts) {
+                if *count != 0 {
+                    *mean = *total / *count as f32;
+                }
+            }
         }
     }
 
@@ -105,15 +95,11 @@ impl<const D : usize> KMean<D> {
         self.sample_count
     }
 
-    pub fn sample_dimension(&self) -> usize {
-        D
-    }
-
     pub fn cluster_count(&self) -> usize {
         self.cluster_count
     }
 
-    pub fn values(&self) -> &[f32] {
+    pub fn values(&self) -> &[Vector<N>] {
         &self.values
     }
 
@@ -121,7 +107,7 @@ impl<const D : usize> KMean<D> {
         &self.labels
     }
 
-    pub fn means(&self) -> &[f32] {
+    pub fn means(&self) -> &[Vector<N>] {
         &self.means
     }
 }

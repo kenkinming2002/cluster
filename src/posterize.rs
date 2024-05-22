@@ -1,3 +1,4 @@
+use crate::Vector;
 use crate::Convert;
 use crate::Pixel;
 use crate::Image;
@@ -24,22 +25,16 @@ where
     let mut rng = thread_rng();
 
     let sample_count = image.width() * image.height();
-    let sample_dimension = P::COMPONENT_COUNT;
     let cluster_count = k;
 
-    let values = image.pixels().flat_map(|x| x.into_array()).map(|x| x.convert()).collect::<Vec<f32>>();
-    let kmean  = KMean::<{P::COMPONENT_COUNT}>::new(sample_count,  cluster_count, values).init_llyod(&mut rng).run();
+    let values = image.pixels().map(|x| Vector(x.into_array().map(Convert::convert))).collect::<Vec<_>>();
+    let kmean  = KMean::new(sample_count,  cluster_count, values).init_llyod(&mut rng).run();
 
     let pixels = image.pixels_mut();
-    let labels = kmean.labels().iter();
+    let labels = kmean.labels();
+    let means = kmean.means();
     for (pixel, label) in std::iter::zip(pixels, labels) {
-        let mut means = kmean.means().chunks_exact(sample_dimension);
-
-        let mean = means.nth(*label).unwrap();
-        let mean = TryInto::<[_; P::COMPONENT_COUNT]>::try_into(mean).unwrap();
-        let mean = mean.map(|x| x.convert());
-
-        *pixel = P::from_array(mean);
+        *pixel = P::from_array(means[*label].0.map(Convert::convert));
     }
 }
 
