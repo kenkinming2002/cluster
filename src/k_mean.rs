@@ -98,7 +98,7 @@ impl KMean {
             let means = self.means.chunks_exact_mut(self.sample_dimension);
             let totals = totals.chunks_exact(self.sample_dimension);
             let counts = counts.iter();
-            itertools::izip!(means, totals, counts).for_each(|(mean, total, count)| std::iter::zip(mean, total).for_each(|(x, y)| *x = *y / *count as f32));
+            itertools::izip!(means, totals, counts).for_each(|(mean, total, count)| std::iter::zip(mean, total).for_each(|(x, y)| if *count != 0 { *x = *y / *count as f32 }));
         }
     }
 
