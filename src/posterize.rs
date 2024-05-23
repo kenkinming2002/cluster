@@ -30,14 +30,14 @@ where
     fn posterize(&mut self, k : NonZero<usize>) {
         let mut rng = thread_rng();
 
-        let values = self.pixels().map(|x| Vector(x.into_array().map(Convert::convert))).collect::<Vec<_>>();
+        let values = self.pixels().map(|pixel| Vector::from_array(Pixel::into_array(*pixel).map(Convert::convert))).collect::<Vec<_>>();
         let kmean  = KMean::new(values, k).init_llyod(&mut rng).run();
 
         let pixels = self.pixels_mut();
         let labels = kmean.labels();
         let means = kmean.means();
         for (pixel, label) in std::iter::zip(pixels, labels) {
-            *pixel = P::from_array(means[*label].0.map(Convert::convert));
+            *pixel = Pixel::from_array(Vector::into_array(means[*label]).map(Convert::convert));
         }
     }
 }

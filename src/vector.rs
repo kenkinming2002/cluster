@@ -1,5 +1,5 @@
 #[derive(Debug, Clone, Copy)]
-pub struct Vector<const N: usize>(pub [f32; N]);
+pub struct Vector<const N: usize>([f32; N]);
 
 impl<const N: usize> Default for Vector<N> {
     fn default() -> Self {
@@ -8,6 +8,14 @@ impl<const N: usize> Default for Vector<N> {
 }
 
 impl<const N: usize> Vector<N> {
+    pub fn from_array(values : [f32; N]) -> Self {
+        Self(values)
+    }
+
+    pub fn into_array(self) -> [f32; N] {
+        self.0
+    }
+
     pub fn length_squared(self) -> f32 {
         self.0.into_iter().map(|x| x*x).sum()
     }
