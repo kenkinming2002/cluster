@@ -30,11 +30,8 @@ where
     fn posterize(&mut self, k : NonZero<usize>) {
         let mut rng = thread_rng();
 
-        let sample_count = self.width() * self.height();
-        let cluster_count = k;
-
         let values = self.pixels().map(|x| Vector(x.into_array().map(Convert::convert))).collect::<Vec<_>>();
-        let kmean  = KMean::new(sample_count, cluster_count, values).init_llyod(&mut rng).run();
+        let kmean  = KMean::new(values, k).init_llyod(&mut rng).run();
 
         let pixels = self.pixels_mut();
         let labels = kmean.labels();

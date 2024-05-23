@@ -7,30 +7,27 @@ use rayon::prelude::*;
 use itertools::Itertools;
 
 pub struct KMean<const N : usize> {
-    sample_count     : usize,
-    cluster_count    : usize,
-
     values : Box<[Vector<N>]>,
     labels : Box<[usize]>,
     means  : Box<[Vector<N>]>,
 }
 
 impl<const N : usize> KMean<N> {
-    pub fn new(sample_count : usize, cluster_count : NonZero<usize>, values : impl Into<Box<[Vector<N>]>>) -> Self {
-        let cluster_count = cluster_count.get();
+    pub fn new(values : impl Into<Box<[Vector<N>]>>, k : NonZero<usize>) -> Self {
+        let k = k.into();
+
         let values = values.into();
+        let labels = vec![k; values.len()].into();
+        let means = vec![Default::default(); k].into();
 
-        let labels = unsafe { Box::new_uninit_slice(sample_count).assume_init() };
-        let means  = unsafe { Box::new_uninit_slice(cluster_count).assume_init() };
-
-        Self { sample_count, cluster_count, values, labels, means, }
+        Self { values, labels, means, }
     }
 
     pub fn init_llyod<R>(mut self, rng : &mut R) -> Self
     where
         R: Rng + ?Sized,
     {
-        self.labels.fill(self.cluster_count);
+        self.labels.fill(self.means.len());
         self.means.iter_mut().for_each(|mean| *mean = *self.values.choose(rng).unwrap());
         self
     }
@@ -59,8 +56,8 @@ impl<const N : usize> KMean<N> {
             }
 
             // 2: Update means
-            let init_totals = || vec![Vector::default(); self.cluster_count * N].into_boxed_slice();
-            let init_counts = || vec![usize::default(); self.cluster_count].into_boxed_slice();
+            let init_totals = || vec![Vector::default(); self.means.len()].into_boxed_slice();
+            let init_counts = || vec![usize::default();  self.means.len()].into_boxed_slice();
             let init = || (init_totals(), init_counts());
 
             let values = self.values.par_iter();
@@ -89,14 +86,6 @@ impl<const N : usize> KMean<N> {
                 }
             }
         }
-    }
-
-    pub fn sample_count(&self) -> usize {
-        self.sample_count
-    }
-
-    pub fn cluster_count(&self) -> usize {
-        self.cluster_count
     }
 
     pub fn values(&self) -> &[Vector<N>] {
