@@ -7,13 +7,13 @@ use rayon::prelude::*;
 use itertools::Itertools;
 
 pub struct KMean<const N : usize> {
-    values : Box<[Vector<N>]>,
+    values : Box<[Vector<f32, N>]>,
     labels : Box<[usize]>,
-    means  : Box<[Vector<N>]>,
+    means  : Box<[Vector<f32, N>]>,
 }
 
 impl<const N : usize> KMean<N> {
-    pub fn new(values : impl Into<Box<[Vector<N>]>>, k : NonZero<usize>) -> Self {
+    pub fn new(values : impl Into<Box<[Vector<f32, N>]>>, k : NonZero<usize>) -> Self {
         let k = k.into();
 
         let values = values.into();
@@ -43,7 +43,7 @@ impl<const N : usize> KMean<N> {
                     let old_label = *label;
                     let new_label = self.means
                         .iter()
-                        .map(|mean| (*mean - *value).length_squared()) // Get squared distance to each cluster
+                        .map(|mean| (*mean - *value)).map(|distance| Vector::dot(distance, distance)) // Get squared distance to each cluster
                         .position_min_by(f32::total_cmp).unwrap();     // Get index of minimum element
 
                     *label = new_label;
@@ -56,8 +56,8 @@ impl<const N : usize> KMean<N> {
             }
 
             // 2: Update means
-            let init_totals = || vec![Vector::default(); self.means.len()].into_boxed_slice();
-            let init_counts = || vec![usize::default();  self.means.len()].into_boxed_slice();
+            let init_totals = || vec![Vector::<f32, N>::default(); self.means.len()].into_boxed_slice();
+            let init_counts = || vec![usize::default();            self.means.len()].into_boxed_slice();
             let init = || (init_totals(), init_counts());
 
             let values = self.values.par_iter();
@@ -88,7 +88,7 @@ impl<const N : usize> KMean<N> {
         }
     }
 
-    pub fn values(&self) -> &[Vector<N>] {
+    pub fn values(&self) -> &[Vector<f32, N>] {
         &self.values
     }
 
@@ -96,7 +96,7 @@ impl<const N : usize> KMean<N> {
         &self.labels
     }
 
-    pub fn means(&self) -> &[Vector<N>] {
+    pub fn means(&self) -> &[Vector<f32, N>] {
         &self.means
     }
 }

@@ -1,80 +1,78 @@
-#[derive(Debug, Clone, Copy)]
-pub struct Vector<const N: usize>([f32; N]);
+use std::ops::Add;
+use std::ops::Sub;
+use std::ops::Mul;
+use std::ops::Div;
+use std::iter::Sum;
 
-impl<const N: usize> Default for Vector<N> {
-    fn default() -> Self {
-        Self([0.0; N])
+trait ArrayZip<Rhs> {
+    type Output;
+    fn zip(self, rhs : Rhs) -> Self::Output;
+}
+
+impl<T, U, const N: usize> ArrayZip<[U; N]> for [T; N] {
+    type Output = [(T, U); N];
+    fn zip(self, rhs : [U; N]) -> Self::Output {
+        let mut lhs = self.into_iter();
+        let mut rhs = rhs.into_iter();
+        std::array::from_fn(|_| (lhs.next().unwrap(), rhs.next().unwrap()))
     }
 }
 
-impl<const N: usize> Vector<N> {
-    pub fn from_array(values : [f32; N]) -> Self {
+#[derive(Debug, Clone, Copy)]
+pub struct Vector<T, const N: usize>([T; N]);
+
+impl<T, const N: usize> Default for Vector<T, N>
+where
+    T: Default
+{
+    fn default() -> Self {
+        Self([(); N].map(|_| Default::default()))
+    }
+}
+
+impl<T, const N: usize> Vector<T, N> {
+    pub fn from_array(values : [T; N]) -> Self {
         Self(values)
     }
 
-    pub fn into_array(self) -> [f32; N] {
+    pub fn into_array(self) -> [T; N] {
         self.0
     }
+}
 
-    pub fn length_squared(self) -> f32 {
-        self.0.into_iter().map(|x| x*x).sum()
-    }
-
-    pub fn length(self) -> f32 {
-        self.length_squared().sqrt()
+impl<T, const N: usize> Vector<T, N> {
+    pub fn dot(self, rhs : Vector<T, N>) -> T
+    where
+        T: Mul<Output = T>,
+        T: Sum<T>,
+    {
+        let lhs = self.into_array().into_iter();
+        let rhs = rhs.into_array().into_iter();
+        std::iter::zip(lhs, rhs).map(|(a, b)| a * b).sum()
     }
 }
 
-impl<const N: usize> std::ops::Add for Vector<N> {
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self::Output {
-        let mut result = Self([0.0; N]);
-        for i in 0..N {
-            result.0[i] = self.0[i] + rhs.0[i];
-        }
-        result
-    }
-}
+impl<T, const N: usize> Add<Vector<T, N>> for Vector<T, N> where T: Add<Output = T> { type Output = Self; fn add(self, rhs: Self) -> Self::Output { Vector(self.into_array().zip(rhs.into_array()).map(|(a, b)| a + b)) } }
+impl<T, const N: usize> Sub<Vector<T, N>> for Vector<T, N> where T: Sub<Output = T> { type Output = Self; fn sub(self, rhs: Self) -> Self::Output { Vector(self.into_array().zip(rhs.into_array()).map(|(a, b)| a - b)) } }
+impl<T, const N: usize> Mul<Vector<T, N>> for Vector<T, N> where T: Mul<Output = T> { type Output = Self; fn mul(self, rhs: Self) -> Self::Output { Vector(self.into_array().zip(rhs.into_array()).map(|(a, b)| a * b)) } }
+impl<T, const N: usize> Div<Vector<T, N>> for Vector<T, N> where T: Div<Output = T> { type Output = Self; fn div(self, rhs: Self) -> Self::Output { Vector(self.into_array().zip(rhs.into_array()).map(|(a, b)| a / b)) } }
 
-impl<const N: usize> std::ops::Sub for Vector<N> {
-    type Output = Self;
-    fn sub(self, rhs: Self) -> Self::Output {
-        let mut result = Self([0.0; N]);
-        for i in 0..N {
-            result.0[i] = self.0[i] - rhs.0[i];
-        }
-        result
-    }
-}
+impl<T, const N: usize> Add<T> for Vector<T, N> where T: Add<Output = T>, T: Copy, { type Output = Self; fn add(self, rhs: T) -> Self::Output { Vector(self.into_array().map(|a| a + rhs)) } }
+impl<T, const N: usize> Sub<T> for Vector<T, N> where T: Sub<Output = T>, T: Copy, { type Output = Self; fn sub(self, rhs: T) -> Self::Output { Vector(self.into_array().map(|a| a - rhs)) } }
+impl<T, const N: usize> Mul<T> for Vector<T, N> where T: Mul<Output = T>, T: Copy, { type Output = Self; fn mul(self, rhs: T) -> Self::Output { Vector(self.into_array().map(|a| a * rhs)) } }
+impl<T, const N: usize> Div<T> for Vector<T, N> where T: Div<Output = T>, T: Copy, { type Output = Self; fn div(self, rhs: T) -> Self::Output { Vector(self.into_array().map(|a| a / rhs)) } }
 
-impl<const N: usize> std::ops::Mul<f32> for Vector<N> {
-    type Output = Self;
-    fn mul(self, rhs: f32) -> Self::Output {
-        let mut result = Self([0.0; N]);
-        for i in 0..N {
-            result.0[i] = self.0[i] * rhs;
-        }
-        result
-    }
-}
-
-impl<const N: usize> std::ops::Div<f32> for Vector<N> {
-    type Output = Self;
-    fn div(self, rhs: f32) -> Self::Output {
-        let mut result = Self([0.0; N]);
-        for i in 0..N {
-            result.0[i] = self.0[i] / rhs;
-        }
-        result
-    }
-}
-
-impl<const N: usize> std::iter::Sum for Vector<N> {
-    fn sum<I: Iterator<Item = Self>>(iter: I) -> Self {
-        let mut result = Self([0.0; N]);
+impl<T, const N: usize> Sum<Vector<T, N>> for Vector<T, N>
+where
+    T: Add<Output = T>,
+    T: Default,
+{
+    fn sum<I: Iterator<Item = Vector<T, N>>>(iter: I) -> Self {
+        let mut result = Default::default();
         for item in iter {
             result = result + item;
         }
         result
     }
 }
+
