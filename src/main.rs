@@ -8,6 +8,8 @@ use image::DynamicImage;
 use std::path::PathBuf;
 use std::num::NonZero;
 
+use anyhow::Result;
+
 use clap::Parser;
 
 /// Posterize an image using k-mean-clustering algorithm.
@@ -21,10 +23,10 @@ struct Cli {
     k : NonZero<usize>,
 }
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    let mut image = ImageReader::open(cli.input).unwrap().decode().unwrap();
+    let mut image = ImageReader::open(cli.input)?.decode()?;
     match &mut image {
         DynamicImage::ImageLuma8(image) => image.posterize(cli.k),
         DynamicImage::ImageLumaA8(image) => image.posterize(cli.k),
@@ -43,6 +45,8 @@ fn main() {
 
         x => panic!("Unsupported image type {x:?}"),
     }
-    image.save(cli.output).unwrap();
+    image.save(cli.output)?;
+
+    Ok(())
 }
 
