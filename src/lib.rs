@@ -17,5 +17,5 @@ pub use image::Image;
 
 pub use vector::Vector;
 pub use k_mean::KMean;
-pub use posterize::posterize;
+pub use posterize::Posterize;
 

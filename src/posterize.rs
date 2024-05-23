@@ -9,32 +9,38 @@ use rand::prelude::*;
 use std::num::NonZero;
 
 /// Posterize an image.
+pub trait Posterize {
+    fn posterize(&mut self, k : NonZero<usize>);
+}
+
+/// Implementation of [Posterize] trait for images.
 ///
 /// This is done by applying the k-mean-clustering algorithm with parameter k and replacing each
 /// pixel with the mean value of assigned cluster.
 ///
 /// The last trait bound is a work-around for the inability to specify trait bounds on generic
 /// associated constants. See [issue #104400](https://github.com/rust-lang/rust/issues/104400).
-pub fn posterize<I, P, C>(image : &mut I, k : NonZero<usize>)
+impl<I, P, C> Posterize for I
 where
     I: Image<Pixel = P>,
     P: Pixel<Component = C>,
     C: Convert<f32>, f32: Convert<C>,
     [P::Component; P::COMPONENT_COUNT] : ,
 {
-    let mut rng = thread_rng();
+    fn posterize(&mut self, k : NonZero<usize>) {
+        let mut rng = thread_rng();
 
-    let sample_count = image.width() * image.height();
-    let cluster_count = k;
+        let sample_count = self.width() * self.height();
+        let cluster_count = k;
 
-    let values = image.pixels().map(|x| Vector(x.into_array().map(Convert::convert))).collect::<Vec<_>>();
-    let kmean  = KMean::new(sample_count,  cluster_count, values).init_llyod(&mut rng).run();
+        let values = self.pixels().map(|x| Vector(x.into_array().map(Convert::convert))).collect::<Vec<_>>();
+        let kmean  = KMean::new(sample_count, cluster_count, values).init_llyod(&mut rng).run();
 
-    let pixels = image.pixels_mut();
-    let labels = kmean.labels();
-    let means = kmean.means();
-    for (pixel, label) in std::iter::zip(pixels, labels) {
-        *pixel = P::from_array(means[*label].0.map(Convert::convert));
+        let pixels = self.pixels_mut();
+        let labels = kmean.labels();
+        let means = kmean.means();
+        for (pixel, label) in std::iter::zip(pixels, labels) {
+            *pixel = P::from_array(means[*label].0.map(Convert::convert));
+        }
     }
 }
-
