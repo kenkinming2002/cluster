@@ -1,5 +1,3 @@
-use crate::Pixel;
-
 pub trait Image {
     type Pixel;
 
@@ -13,7 +11,7 @@ pub trait Image {
     fn pixels_mut(&mut self) -> impl Iterator<Item = &mut Self::Pixel>;
 }
 
-impl<P: Pixel, Container> Image for image::ImageBuffer<P, Container>
+impl<P, Container> Image for image::ImageBuffer<P, Container>
 where
     P: image::Pixel,
     Container: std::ops::Deref<Target = [P::Subpixel]> + std::ops::DerefMut
