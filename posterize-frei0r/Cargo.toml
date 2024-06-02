@@ -1,0 +1,12 @@
+[package]
+name = "posterize-frei0r"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+frei0r-rs = { git = "https://gitlab.com/kwokkinming/frei0r-rs.git", version = "0.1.0" }
+posterize = { version = "0.1.0", path = "../posterize" }
+rand = "0.8.5"
