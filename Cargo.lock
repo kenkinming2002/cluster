@@ -297,6 +297,11 @@ checksum = "98cc8fbded0c607b7ba9dd60cd98df59af97e84d24e49c8557331cfc26d301ce"
 [[package]]
 name = "cluster"
 version = "0.1.0"
+dependencies = [
+ "itertools 0.13.0",
+ "rand",
+ "rayon",
+]
 
 [[package]]
 name = "color_quant"
@@ -817,6 +822,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "cluster",
  "image",
  "itertools 0.13.0",
  "rand",
@@ -827,8 +833,8 @@ dependencies = [
 name = "posterize-frei0r"
 version = "0.1.0"
 dependencies = [
+ "cluster",
  "frei0r-rs",
- "posterize",
  "rand",
 ]
 

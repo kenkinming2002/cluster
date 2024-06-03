@@ -1,11 +1,11 @@
-use crate::Vector;
 use crate::Convert;
 use crate::Pixel;
 use crate::Image;
-use crate::KMean;
+
+use cluster::vector::Vector;
+use cluster::k_means::k_means_llyod;
 
 use rand::prelude::*;
-
 use std::num::NonZero;
 
 /// Posterize an image.
@@ -28,16 +28,10 @@ where
     [P::Component; P::COMPONENT_COUNT] : ,
 {
     fn posterize(&mut self, k : NonZero<usize>) {
-        let mut rng = thread_rng();
-
-        let values = self.pixels().map(|pixel| Vector::from_array(Pixel::into_array(*pixel).map(Convert::convert))).collect::<Vec<_>>();
-        let kmean  = KMean::new(values, k).init_llyod(&mut rng).run();
-
-        let pixels = self.pixels_mut();
-        let labels = kmean.labels();
-        let means = kmean.means();
-        for (pixel, label) in std::iter::zip(pixels, labels) {
-            *pixel = Pixel::from_array(Vector::into_array(means[*label]).map(Convert::convert));
+        let samples = self.pixels().map(|pixel| Vector::from_array(Pixel::into_array(*pixel).map(Convert::convert))).collect::<Vec<_>>();
+        let kmean = k_means_llyod(&mut thread_rng(), &samples, k);
+        for (pixel, label) in std::iter::zip(self.pixels_mut(), kmean.labels.iter()) {
+            *pixel = Pixel::from_array(Vector::into_array(kmean.means[*label]).map(Convert::convert));
         }
     }
 }
