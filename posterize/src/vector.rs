@@ -2,6 +2,12 @@ use std::ops::Add;
 use std::ops::Sub;
 use std::ops::Mul;
 use std::ops::Div;
+
+use std::ops::AddAssign;
+use std::ops::SubAssign;
+use std::ops::MulAssign;
+use std::ops::DivAssign;
+
 use std::iter::Sum;
 
 trait ArrayZip<Rhs> {
@@ -38,6 +44,14 @@ impl<T, const N: usize> Vector<T, N> {
     pub fn into_array(self) -> [T; N] {
         self.0
     }
+
+    pub fn each_ref(&self) -> [&T; N] {
+        self.0.each_ref()
+    }
+
+    pub fn each_mut(&mut self) -> [&mut T; N] {
+        self.0.each_mut()
+    }
 }
 
 impl<T, const N: usize> Vector<T, N> {
@@ -61,6 +75,16 @@ impl<T, const N: usize> Add<T> for Vector<T, N> where T: Add<Output = T>, T: Cop
 impl<T, const N: usize> Sub<T> for Vector<T, N> where T: Sub<Output = T>, T: Copy, { type Output = Self; fn sub(self, rhs: T) -> Self::Output { Vector(self.into_array().map(|a| a - rhs)) } }
 impl<T, const N: usize> Mul<T> for Vector<T, N> where T: Mul<Output = T>, T: Copy, { type Output = Self; fn mul(self, rhs: T) -> Self::Output { Vector(self.into_array().map(|a| a * rhs)) } }
 impl<T, const N: usize> Div<T> for Vector<T, N> where T: Div<Output = T>, T: Copy, { type Output = Self; fn div(self, rhs: T) -> Self::Output { Vector(self.into_array().map(|a| a / rhs)) } }
+
+impl<T, const N: usize> AddAssign<Vector<T, N>> for Vector<T, N> where T: AddAssign { fn add_assign(&mut self, rhs: Self) { self.each_mut().zip(rhs.into_array()).into_iter().for_each(|(a, b)| { *a += b }) } }
+impl<T, const N: usize> SubAssign<Vector<T, N>> for Vector<T, N> where T: SubAssign { fn sub_assign(&mut self, rhs: Self) { self.each_mut().zip(rhs.into_array()).into_iter().for_each(|(a, b)| { *a -= b }) } }
+impl<T, const N: usize> MulAssign<Vector<T, N>> for Vector<T, N> where T: MulAssign { fn mul_assign(&mut self, rhs: Self) { self.each_mut().zip(rhs.into_array()).into_iter().for_each(|(a, b)| { *a *= b }) } }
+impl<T, const N: usize> DivAssign<Vector<T, N>> for Vector<T, N> where T: DivAssign { fn div_assign(&mut self, rhs: Self) { self.each_mut().zip(rhs.into_array()).into_iter().for_each(|(a, b)| { *a /= b }) } }
+
+impl<T, const N: usize> AddAssign<T> for Vector<T, N> where T: AddAssign, T: Copy, { fn add_assign(&mut self, rhs: T) { self.each_mut().into_iter().for_each(|a| { *a += rhs }) } }
+impl<T, const N: usize> SubAssign<T> for Vector<T, N> where T: SubAssign, T: Copy, { fn sub_assign(&mut self, rhs: T) { self.each_mut().into_iter().for_each(|a| { *a -= rhs }) } }
+impl<T, const N: usize> MulAssign<T> for Vector<T, N> where T: MulAssign, T: Copy, { fn mul_assign(&mut self, rhs: T) { self.each_mut().into_iter().for_each(|a| { *a *= rhs }) } }
+impl<T, const N: usize> DivAssign<T> for Vector<T, N> where T: DivAssign, T: Copy, { fn div_assign(&mut self, rhs: T) { self.each_mut().into_iter().for_each(|a| { *a /= rhs }) } }
 
 impl<T, const N: usize> Sum<Vector<T, N>> for Vector<T, N>
 where

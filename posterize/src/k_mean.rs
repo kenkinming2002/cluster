@@ -65,14 +65,14 @@ impl<const N : usize> KMean<N> {
             let (totals, counts) = (values, labels)
                 .into_par_iter()
                 .fold(init, |(mut totals, mut counts), (value, label)| {
-                    totals[*label] = totals[*label] + *value;
-                    counts[*label] = counts[*label] + 1;
+                    totals[*label] += *value;
+                    counts[*label] += 1;
 
                     (totals, counts)
                 })
                 .reduce(init, |(mut totals1, mut counts1), (totals2, counts2)| {
-                    std::iter::zip(totals1.iter_mut(), totals2.iter()).for_each(|(total1, total2)| *total1 = *total1 + *total2);
-                    std::iter::zip(counts1.iter_mut(), counts2.iter()).for_each(|(count1, count2)| *count1 = *count1 + *count2);
+                    std::iter::zip(totals1.iter_mut(), totals2.iter()).for_each(|(total1, total2)| *total1 += *total2);
+                    std::iter::zip(counts1.iter_mut(), counts2.iter()).for_each(|(count1, count2)| *count1 += *count2);
 
                     (totals1, counts1)
                 });
