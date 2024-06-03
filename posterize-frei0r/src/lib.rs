@@ -1,16 +1,19 @@
 #![feature(generic_nonzero)]
 
-use cluster::vector::Vector;
-use cluster::k_means::k_means_llyod;
+use cluster::vector::*;
+use cluster::k_means::*;
 
 use frei0r_rs::*;
 
 use rand::prelude::*;
+
 use std::num::NonZero;
+use std::ffi::CString;
 
 #[derive(PluginBase)]
 pub struct PosterizePlugin {
     #[frei0r(explain = c"number of clusters(default: 2)")] k : f64,
+    #[frei0r(explain = c"initialization algorithm to use for k-mean clustering(choices: llyod, k-means++, default: llyod)")] init : CString,
 }
 
 impl Plugin for PosterizePlugin {
@@ -29,13 +32,23 @@ impl Plugin for PosterizePlugin {
     fn new(_width : usize, _height : usize) -> Self {
         Self {
             k : 2.0,
+            init : CString::from(c"llyod"),
         }
     }
 
     fn update(&self, _time : f64, _width : usize, _height : usize, inframe : &[u32], outframe : &mut [u32]) {
         let samples = inframe.iter().map(|pixel| Vector::from_array(pixel.to_le_bytes().map(|x| x as f32))).collect::<Vec<_>>();
+
         let k = NonZero::new(self.k as usize).expect("k must be a non-zero positive integer");
-        let kmean = k_means_llyod(&mut thread_rng(), &samples, k);
+
+        #[allow(clippy::redundant_guards)]
+        let init = match self.init.as_c_str() {
+            init if init == c"llyod" => KMeanInit::Llyod,
+            init if init == c"k-means++" => KMeanInit::KMeanPlusPlus,
+            init => panic!("Unsupported initialization method {init}", init = init.to_string_lossy()),
+        };
+
+        let kmean = k_means(&mut thread_rng(), &samples, k, init);
         for (pixel, label) in std::iter::zip(outframe, kmean.labels.iter()) {
             *pixel = u32::from_le_bytes(Vector::into_array(kmean.means[*label]).map(|x| x as u8));
         }

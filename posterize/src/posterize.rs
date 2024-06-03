@@ -2,15 +2,15 @@ use crate::Convert;
 use crate::Pixel;
 use crate::Image;
 
-use cluster::vector::Vector;
-use cluster::k_means::k_means_llyod;
+use cluster::vector::*;
+use cluster::k_means::*;
 
 use rand::prelude::*;
 use std::num::NonZero;
 
 /// Posterize an image.
 pub trait Posterize {
-    fn posterize(&mut self, k : NonZero<usize>);
+    fn posterize(&mut self, k : NonZero<usize>, init : KMeanInit);
 }
 
 /// Implementation of [Posterize] trait for images.
@@ -27,9 +27,9 @@ where
     C: Convert<f32>, f32: Convert<C>,
     [P::Component; P::COMPONENT_COUNT] : ,
 {
-    fn posterize(&mut self, k : NonZero<usize>) {
+    fn posterize(&mut self, k : NonZero<usize>, init : KMeanInit) {
         let samples = self.pixels().map(|pixel| Vector::from_array(Pixel::into_array(*pixel).map(Convert::convert))).collect::<Vec<_>>();
-        let kmean = k_means_llyod(&mut thread_rng(), &samples, k);
+        let kmean = k_means(&mut thread_rng(), &samples, k, init);
         for (pixel, label) in std::iter::zip(self.pixels_mut(), kmean.labels.iter()) {
             *pixel = Pixel::from_array(Vector::into_array(kmean.means[*label]).map(Convert::convert));
         }

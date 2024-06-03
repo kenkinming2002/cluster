@@ -64,6 +64,15 @@ impl<T, const N: usize> Vector<T, N> {
         let rhs = rhs.into_array().into_iter();
         std::iter::zip(lhs, rhs).map(|(a, b)| a * b).sum()
     }
+
+    pub fn squared_length(self) -> T
+    where
+        T: Copy,
+        T: Mul<Output = T>,
+        T: Sum<T>,
+    {
+        self.dot(self)
+    }
 }
 
 impl<T, const N: usize> Add<Vector<T, N>> for Vector<T, N> where T: Add<Output = T> { type Output = Self; fn add(self, rhs: Self) -> Self::Output { Vector(self.into_array().zip(rhs.into_array()).map(|(a, b)| a + b)) } }
