@@ -88,9 +88,12 @@ where
             let totals = totals.iter();
             let counts = counts.iter();
             for (mean, total, count) in itertools::izip!(means, totals, counts) {
-                if *count != 0 {
-                    *mean = *total / *count as f32;
+                *mean = if *count != 0 {
+                    *total / *count as f32
+                } else {
+                    *samples.choose(rng).unwrap()
                 }
+
             }
         }
     }
