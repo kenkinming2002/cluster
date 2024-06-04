@@ -28,8 +28,8 @@ where
     [P::Component; P::COMPONENT_COUNT] : ,
 {
     fn posterize(&mut self, k : NonZero<usize>, init : KMeanInit) {
-        let samples = self.pixels().map(|pixel| Vector::from_array(Pixel::into_array(*pixel).map(Convert::convert))).collect::<Vec<_>>();
-        let kmean = k_means(&mut thread_rng(), &samples, k, init);
+        let samples = self.pixels().map(|pixel| Vector::from_array(Pixel::into_array(*pixel).map(Convert::convert)));
+        let kmean = k_mean(&mut thread_rng(), init, k, samples);
         for (pixel, label) in std::iter::zip(self.pixels_mut(), kmean.labels.iter()) {
             *pixel = Pixel::from_array(Vector::into_array(kmean.means[*label]).map(Convert::convert));
         }

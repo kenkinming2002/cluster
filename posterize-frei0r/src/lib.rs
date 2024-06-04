@@ -37,8 +37,7 @@ impl Plugin for PosterizePlugin {
     }
 
     fn update(&self, _time : f64, _width : usize, _height : usize, inframe : &[u32], outframe : &mut [u32]) {
-        let samples = inframe.iter().map(|pixel| Vector::from_array(pixel.to_le_bytes().map(|x| x as f32))).collect::<Vec<_>>();
-
+        let samples = inframe.iter().map(|pixel| Vector::from_array(pixel.to_le_bytes().map(|x| x as f32)));
         let k = NonZero::new(self.k as usize).expect("k must be a non-zero positive integer");
 
         #[allow(clippy::redundant_guards)]
@@ -48,9 +47,9 @@ impl Plugin for PosterizePlugin {
             init => panic!("Unsupported initialization method {init}", init = init.to_string_lossy()),
         };
 
-        let kmean = k_means(&mut thread_rng(), &samples, k, init);
-        for (pixel, label) in std::iter::zip(outframe, kmean.labels.iter()) {
-            *pixel = u32::from_le_bytes(Vector::into_array(kmean.means[*label]).map(|x| x as u8));
+        let k_mean = k_mean(&mut thread_rng(), init, k, samples);
+        for (pixel, label) in std::iter::zip(outframe, k_mean.labels.iter()) {
+            *pixel = u32::from_le_bytes(Vector::into_array(k_mean.means[*label]).map(|x| x as u8));
         }
     }
 

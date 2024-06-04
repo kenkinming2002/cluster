@@ -1,7 +1,10 @@
 #![feature(generic_nonzero)]
-#![feature(iter_repeat_n)]
+#![feature(new_uninit)]
+#![feature(let_chains)]
 
 //! Implementation of various clustering algorithms.
 
 pub mod vector;
 pub mod k_means;
+
+mod slice_random_ext;
