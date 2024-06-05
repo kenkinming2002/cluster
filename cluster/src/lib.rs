@@ -1,6 +1,5 @@
 #![feature(generic_nonzero)]
 #![feature(new_uninit)]
-#![feature(let_chains)]
 
 //! Implementation of various clustering algorithms.
 
