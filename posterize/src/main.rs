@@ -1,7 +1,8 @@
 #![feature(generic_nonzero)]
 
 use posterize::Posterize;
-use cluster::k_means::KMeanInit;
+use cluster::ClusterModel;
+use cluster::init::ClusterInit;
 
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
@@ -15,16 +16,31 @@ use clap::Parser;
 use clap::ValueEnum;
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
-enum Init {
+enum OurClusterModel {
+    KMeans,
+    GaussianMixture,
+}
+
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum OurClusterInit {
     Llyod,
     KMeanPlusPlus,
 }
 
-impl From<Init> for KMeanInit {
-    fn from(value: Init) -> Self {
+impl From<OurClusterModel> for ClusterModel {
+    fn from(value: OurClusterModel) -> Self {
         match value {
-            Init::Llyod => Self::Llyod,
-            Init::KMeanPlusPlus => Self::KMeanPlusPlus,
+            OurClusterModel::KMeans => Self::KMeans,
+            OurClusterModel::GaussianMixture => Self::GaussianMixture,
+        }
+    }
+}
+
+impl From<OurClusterInit> for ClusterInit {
+    fn from(value: OurClusterInit) -> Self {
+        match value {
+            OurClusterInit::Llyod => Self::Llyod,
+            OurClusterInit::KMeanPlusPlus => Self::KMeanPlusPlus,
         }
     }
 }
@@ -36,10 +52,12 @@ struct Cli {
     input : PathBuf,
     /// Output filepath
     output : PathBuf,
-    /// Number of color in output image/Parameter in k-mean-clustering algorithm
+    /// Clustering algorithm to use
+    model : OurClusterModel,
+    /// Initialization method in clustering algorithm
+    init : OurClusterInit,
+    /// Number of color in output image/Parameter in clustering algorithm
     k : NonZero<usize>,
-    /// Initialization method in k-mean-clustering algorithm
-    init : Init,
 }
 
 fn main() -> Result<()> {
@@ -47,20 +65,20 @@ fn main() -> Result<()> {
 
     let mut image = ImageReader::open(cli.input)?.decode()?;
     match &mut image {
-        DynamicImage::ImageLuma8(image) => image.posterize(cli.k, cli.init.into()),
-        DynamicImage::ImageLumaA8(image) => image.posterize(cli.k, cli.init.into()),
+        DynamicImage::ImageLuma8(image) => image.posterize(cli.model.into(), cli.k, cli.init.into()),
+        DynamicImage::ImageLumaA8(image) => image.posterize(cli.model.into(), cli.k, cli.init.into()),
 
-        DynamicImage::ImageLuma16(image) => image.posterize(cli.k, cli.init.into()),
-        DynamicImage::ImageLumaA16(image) => image.posterize(cli.k, cli.init.into()),
+        DynamicImage::ImageLuma16(image) => image.posterize(cli.model.into(), cli.k, cli.init.into()),
+        DynamicImage::ImageLumaA16(image) => image.posterize(cli.model.into(), cli.k, cli.init.into()),
 
-        DynamicImage::ImageRgb8(image)  => image.posterize(cli.k, cli.init.into()),
-        DynamicImage::ImageRgba8(image) => image.posterize(cli.k, cli.init.into()),
+        DynamicImage::ImageRgb8(image)  => image.posterize(cli.model.into(), cli.k, cli.init.into()),
+        DynamicImage::ImageRgba8(image) => image.posterize(cli.model.into(), cli.k, cli.init.into()),
 
-        DynamicImage::ImageRgb16(image)  => image.posterize(cli.k, cli.init.into()),
-        DynamicImage::ImageRgba16(image) => image.posterize(cli.k, cli.init.into()),
+        DynamicImage::ImageRgb16(image)  => image.posterize(cli.model.into(), cli.k, cli.init.into()),
+        DynamicImage::ImageRgba16(image) => image.posterize(cli.model.into(), cli.k, cli.init.into()),
 
-        DynamicImage::ImageRgb32F(image)  => image.posterize(cli.k, cli.init.into()),
-        DynamicImage::ImageRgba32F(image) => image.posterize(cli.k, cli.init.into()),
+        DynamicImage::ImageRgb32F(image)  => image.posterize(cli.model.into(), cli.k, cli.init.into()),
+        DynamicImage::ImageRgba32F(image) => image.posterize(cli.model.into(), cli.k, cli.init.into()),
 
         x => panic!("Unsupported image type {x:?}"),
     }
