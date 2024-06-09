@@ -11,14 +11,13 @@ use frei0r_rs::*;
 use rand::prelude::*;
 use itertools::Itertools;
 
-use std::num::NonZero;
 use std::ffi::CString;
 
 #[derive(PluginBase)]
 pub struct PosterizePlugin {
     #[frei0r(explain = c"clustering model to use(choices: k-means, gaussian-mixture, default : k-means)")] model : CString,
     #[frei0r(explain = c"initialization algorithm to use for clustering(choices: llyod, k-means++, default: llyod)")] init : CString,
-    #[frei0r(explain = c"number of clusters(default: 2)")] k : f64,
+    #[frei0r(explain = c"number of clusters(default: 2)")] cluster_count : f64,
 }
 
 impl Plugin for PosterizePlugin {
@@ -37,7 +36,7 @@ impl Plugin for PosterizePlugin {
     fn new(_width : usize, _height : usize) -> Self {
         Self {
             model : CString::from(c"gaussian-mixture"),
-            k : 2.0,
+            cluster_count : 2.0,
             init : CString::from(c"llyod"),
         }
     }
@@ -57,22 +56,22 @@ impl Plugin for PosterizePlugin {
             init => panic!("Unsupported initialization method {init}", init = init.to_string_lossy()),
         };
 
-        let k = NonZero::new(self.k as usize).expect("k must be a non-zero positive integer");
+        let samples = inframe.iter().map(|pixel| Vector::from_array(pixel.to_le_bytes().map(|x| x as f64))).collect::<Vec<_>>();
 
-        let samples = inframe.iter().map(|pixel| Vector::from_array(pixel.to_le_bytes().map(|x| x as f64)));
+        let sample_count = samples.len();
+        let cluster_count = self.cluster_count as usize;
         match model {
             ClusterModel::KMeans => {
-                let result = k_mean(&mut thread_rng(), init, k, samples);
+                let (cluster_means, sample_labels, _) = KMeans::new(sample_count, cluster_count).run(&samples, init, &mut thread_rng());
                 for (sample_index, pixel) in outframe.iter_mut().enumerate() {
-                    let label = result.labels[sample_index];
-                    *pixel = u32::from_le_bytes(Vector::into_array(result.means[label]).map(|x| x as u8));
+                    *pixel = u32::from_le_bytes(Vector::into_array(cluster_means[sample_labels[sample_index]]).map(|x| x as u8));
                 }
             },
             ClusterModel::GaussianMixture => {
-                let result = gaussian_mixture(&mut thread_rng(), init, k, samples);
+                let (_, cluster_means, _, _, _, _, posteriors) = GaussianMixture::new(sample_count, cluster_count).run(&samples, init, &mut thread_rng());
                 for (sample_index, pixel) in outframe.iter_mut().enumerate() {
-                    let label = (0..result.cluster_count).map(|cluster_index| result.posteriors[cluster_index * result.sample_count + sample_index]).position_max_by(f64::total_cmp).unwrap();
-                    *pixel = u32::from_le_bytes(Vector::into_array(result.cluster_means[label]).map(|x| x as u8));
+                    let label = (0..cluster_count).map(|cluster_index| posteriors[cluster_index * sample_count + sample_index]).position_max_by(f64::total_cmp).unwrap();
+                    *pixel = u32::from_le_bytes(Vector::into_array(cluster_means[label]).map(|x| x as u8));
                 }
             },
         }

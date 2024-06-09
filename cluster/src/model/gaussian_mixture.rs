@@ -1,216 +1,178 @@
-use crate::math::*;
+use crate::math::Vector;
+use crate::math::Matrix;
+use crate::math::OuterProduct;
+use crate::math::MseIteratorExt;
+use crate::math::MultivariateGaussian;
 use crate::model::init::ModelInit;
 
 use rand::prelude::*;
 
-use std::num::NonZero;
-
-/// Result from training a Gaussian Mixture Model.
-#[derive(Clone, Debug)]
-pub struct GaussianMixtureResult<const N: usize>{
-    pub sample_count : usize,
-    pub samples      : Vec<Vector<N>>,
-
-    pub cluster_count       : usize,
-    pub cluster_weights     : Vec<f64>,
-    pub cluster_means       : Vec<Vector<N>>,
-    pub cluster_covariances : Vec<Matrix<N>>,
-
-    /** P(X|C) */ pub likelihoods          : Vec<f64>,
-    /** P(X)   */ pub marginal_likelihoods : Vec<f64>,
-
-    /** P(C)   */ pub priors               : Vec<f64>,
-    /** P(C|X) */ pub posteriors           : Vec<f64>,
-}
-
-pub struct GaussianMixture<'a, R, const N: usize>
-where
-    R: Rng
-{
-    rng : &'a mut R,
-    init : ModelInit,
-
+/// Implementation of Gaussian mixture model Clustering algorithm.
+#[derive(Debug, Copy, Clone)]
+pub struct GaussianMixture<const N: usize> {
     sample_count : usize,
-    samples      : Vec<Vector<N>>,
-
-    cluster_count       : usize,
-
-    cluster_weights     : Vec<f64>,
-    cluster_means       : Vec<Vector<N>>,
-    cluster_covariances : Vec<Matrix<N>>,
-
-    likelihoods          : Vec<f64>,
-    marginal_likelihoods : Vec<f64>,
-
-    priors     : Vec<f64>,
-    posteriors : Vec<f64>,
-
-    delta : f64,
+    cluster_count : usize,
 }
 
-
-impl<'a, R, const N: usize> GaussianMixture<'a, R, N>
-where
-    R: Rng
-{
+impl<const N: usize> GaussianMixture<N> {
     /// Constructor.
+    pub fn new(sample_count : usize, cluster_count : usize) -> Self {
+        Self { sample_count, cluster_count, }
+    }
+
+    /// Gaussian mixture model initialization step.
     ///
-    /// The arguments are the same as in [TODO].
-    #[allow(unused)]
-    pub fn new<I>(rng : &'a mut R, init : ModelInit, k : NonZero<usize>, samples : I) -> Self
+    /// **Inputs**:  (sample_values) <br/>
+    /// **Outputs**: (cluster_weights, cluster_means, cluster_covariances)
+    pub fn init<R>(self, sample_values : &[Vector<N>], init : ModelInit, rng : &mut R) -> (Vec<f64>, Vec<Vector<N>>, Vec<Matrix<N>>)
     where
-        I: IntoIterator<Item = Vector<N>>
+        R: Rng
     {
-        let samples = samples.into_iter().collect::<Vec<_>>();
+        assert_eq!(self.sample_count, sample_values.len());
 
-        let sample_count = samples.len();
-        let cluster_count = k.into();
+        let cluster_weights = vec![1.0 / self.cluster_count as f64; self.cluster_count];
+        let cluster_means = init.init(rng, sample_values, self.cluster_count);
+        let cluster_covariances = vec![Matrix::one(); self.cluster_count];
 
-        // This is unsafe, and probably invoke undefined behavior in plenty of different ways. But
-        // a compiler that does not allow uninitialized POD is pretty stupid in my opinion.
-
-        let cluster_weights     = unsafe { Box::new_uninit_slice(cluster_count).assume_init().into_vec() };
-        let cluster_means       = unsafe { Box::new_uninit_slice(cluster_count).assume_init().into_vec() };
-        let cluster_covariances = unsafe { Box::new_uninit_slice(cluster_count).assume_init().into_vec() };
-
-        let likelihoods          = unsafe { Box::new_uninit_slice(sample_count * cluster_count).assume_init().into_vec() };
-        let marginal_likelihoods = unsafe { Box::new_uninit_slice(sample_count)                .assume_init().into_vec() };
-
-        let priors               = unsafe { Box::new_uninit_slice(cluster_count)               .assume_init().into_vec() };
-        let posteriors           = unsafe { Box::new_uninit_slice(sample_count * cluster_count).assume_init().into_vec() };
-
-        let error = 0.0;
-
-        Self { rng, init, sample_count, samples, cluster_count, cluster_weights, cluster_means, cluster_covariances, likelihoods, marginal_likelihoods, priors, posteriors, delta: error }
+        (cluster_weights, cluster_means, cluster_covariances)
     }
 
-    pub fn init(&mut self) {
-        self.cluster_weights.fill((self.cluster_count as f64).recip());
-        self.cluster_means.copy_from_slice(&self.init.init(self.rng, &self.samples, self.cluster_count));
-        self.cluster_covariances.fill(Matrix::one());
-    }
+    /// Gaussian mixture model expectation step(Kinda).
+    ///
+    /// **Inputs**:  (sample_values, cluster_weights, cluster_means, cluster_covariances) <br/>
+    /// **Outputs**: (priors, likelihoods, marginal_likelihoods, posteriors) i.e. All your Bayesian goodies
+    pub fn e_step(self, sample_values : &[Vector<N>], cluster_weights : &[f64], cluster_means : &[Vector<N>], cluster_covariances : &[Matrix<N>]) -> (Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>) {
+        assert_eq!(self.sample_count, sample_values.len());
+        assert_eq!(self.cluster_count, cluster_weights.len());
+        assert_eq!(self.cluster_count, cluster_means.len());
+        assert_eq!(self.cluster_count, cluster_covariances.len());
 
-    pub fn expectation_step(&mut self) {
-        // 1: Compute priors P(X) from current estimate of model parameters.
+        // 1: Compute priors P(C) from current estimate of model parameters.
+        let mut priors = vec![Default::default(); self.sample_count];
         for cluster_index in 0..self.cluster_count {
-            self.priors[cluster_index] = self.cluster_weights[cluster_index];
+            priors[cluster_index] = cluster_weights[cluster_index];
         }
 
         // 2: Compute likelihoods P(X|C) from current estimate of model parameters.
+        let mut likelihoods = vec![Default::default(); self.sample_count * self.cluster_count];
         for cluster_index in 0..self.cluster_count {
-            let dist = MultivariateGaussian::new(self.cluster_means[cluster_index], self.cluster_covariances[cluster_index]);
+            let dist = MultivariateGaussian::new(cluster_means[cluster_index], cluster_covariances[cluster_index]);
             for sample_index in 0..self.sample_count {
-                // Disallow zero likelihoods, sort of like add one smoothing I guess?
-                // This prevent division by zero down the road.
-                // In particular, we do not want zero marginal likelihood if a sample happen to be
-                // far away from all clusters.
-                self.likelihoods[cluster_index * self.sample_count + sample_index] = dist.sample(self.samples[sample_index]).max(1e-16);
+                // Disallow zero likelihoods, sort of like add one smoothing I guess? This prevent
+                // division by zero down the road. In particular, we do not want zero marginal
+                // likelihood if a sample happen to be far away from all clusters.
+                likelihoods[cluster_index * self.sample_count + sample_index] = dist.sample(sample_values[sample_index]).max(1e-16);
             }
         }
 
         // 3: Compute marginal likelihoods P(X) = sum(P(X|C_i)P(C_i)).
+        let mut marginal_likelihoods = vec![Default::default(); self.sample_count];
         for sample_index in 0..self.sample_count {
-            self.marginal_likelihoods[sample_index] = 0.0;
+            marginal_likelihoods[sample_index] = 0.0;
             for cluster_index in 0..self.cluster_count {
-                self.marginal_likelihoods[sample_index] += self.likelihoods[cluster_index * self.sample_count + sample_index] * self.priors[cluster_index];
+                marginal_likelihoods[sample_index] += likelihoods[cluster_index * self.sample_count + sample_index] * priors[cluster_index];
             }
         }
 
         // 4: Compute posteriors P(C|X) = P(X|C)*P(C)/P(X)
+        let mut posteriors = vec![Default::default(); self.sample_count * self.cluster_count];
         for cluster_index in 0..self.cluster_count {
             for sample_index in 0..self.sample_count {
-                self.posteriors[cluster_index * self.sample_count + sample_index] = self.likelihoods[cluster_index * self.sample_count + sample_index] * self.priors[cluster_index] / self.marginal_likelihoods[sample_index]; // <- Potential Division By Zero
+                posteriors[cluster_index * self.sample_count + sample_index] = likelihoods[cluster_index * self.sample_count + sample_index] * priors[cluster_index] / marginal_likelihoods[sample_index]; // <- Aforementioned potential Division By Zero
             }
         }
+
+        (priors, likelihoods, marginal_likelihoods, posteriors)
     }
 
-    pub fn maximization_step(&mut self) {
-        self.delta = 0.0;
+    /// Gaussian mixture model maximization step(Kinda).
+    ///
+    /// **Inputs**:  (sample_values, priors, likelihoods, marginal_likelihoods, posteriors) <br/>
+    /// **Outputs**: (cluster_weights, cluster_means, cluster_covariances)
+    pub fn m_step(self, sample_values : &[Vector<N>], priors : &[f64], likelihoods : &[f64], marginal_likelihoods : &[f64], posteriors : &[f64]) -> (Vec<f64>, Vec<Vector<N>>, Vec<Matrix<N>>) {
+        assert_eq!(self.sample_count, sample_values.len());
+        assert_eq!(self.sample_count, priors.len());
+        assert_eq!(self.sample_count * self.cluster_count, likelihoods.len());
+        assert_eq!(self.sample_count, marginal_likelihoods.len());
+        assert_eq!(self.sample_count * self.cluster_count, posteriors.len());
 
         // 1: MLE estimate of cluster weights: weight(C) = sum(P(C|X)) / sample_count
+        let mut cluster_weights = vec![Default::default(); self.cluster_count];
         for cluster_index in 0..self.cluster_count {
             let mut total = 0.0;
             for sample_index in 0..self.sample_count {
-                total += self.posteriors[cluster_index * self.sample_count + sample_index];
+                total += posteriors[cluster_index * self.sample_count + sample_index];
             }
-
-            let old = self.cluster_weights[cluster_index];
-            let new = total / self.sample_count as f64;
-
-            self.delta += (new - old) * (new - old);
-            self.cluster_weights[cluster_index] = new;
+            cluster_weights[cluster_index] = total / self.sample_count as f64;
         }
 
         // 2: MLE estimate of cluster means: mean(C) = weighted_average(X, P(C|X))
+        let mut cluster_means = vec![Default::default(); self.cluster_count];
         for cluster_index in 0..self.cluster_count {
             let mut total = Vector::zero();
             let mut weight = 0.0;
             for sample_index in 0..self.sample_count {
-                total  += self.samples[sample_index] * self.posteriors[cluster_index * self.sample_count + sample_index];
-                weight +=                              self.posteriors[cluster_index * self.sample_count + sample_index];
+                total  += sample_values[sample_index] * posteriors[cluster_index * self.sample_count + sample_index];
+                weight +=                               posteriors[cluster_index * self.sample_count + sample_index];
             }
-
-            let old = self.cluster_means[cluster_index];
-            let new = total / weight;
-
-            self.delta += (new - old).into_array().into_iter().map(|x| x * x).sum::<f64>();
-            self.cluster_means[cluster_index] = new;
+            cluster_means[cluster_index] = total / weight;
         }
 
         // 3: MLE estimate of cluster covariances: covariance(C) = weighted_average((X-mean(C))(X-mean(C))^T, P(C|X)) * sample_count / (sample_count - 1) (With Bessel's correction)
+        let mut cluster_covariances = vec![Default::default(); self.cluster_count];
         for cluster_index in 0..self.cluster_count {
             let mut total = Matrix::zero();
             let mut weight = 0.0;
             for sample_index in 0..self.sample_count {
-                total  += (self.samples[sample_index] - self.cluster_means[cluster_index]).outer_product(self.samples[sample_index] - self.cluster_means[cluster_index]) * self.posteriors[cluster_index * self.sample_count + sample_index];
-                weight +=                                                                                                                                                  self.posteriors[cluster_index * self.sample_count + sample_index];
+                total  += (sample_values[sample_index] - cluster_means[cluster_index]).outer_product(sample_values[sample_index] - cluster_means[cluster_index]) * posteriors[cluster_index * self.sample_count + sample_index];
+                weight +=                                                                                                                                          posteriors[cluster_index * self.sample_count + sample_index];
+            }
+            cluster_covariances[cluster_index] = total / weight * self.sample_count as f64 / (self.sample_count - 1) as f64;
+        }
+
+        (cluster_weights, cluster_means, cluster_covariances)
+    }
+
+    /// Gaussian mixture model algorithm.
+    ///
+    /// **Inputs**:  (sample_values) <br/>
+    /// **Outputs**: (cluster_weights, cluster_means, cluster_covariances, priors, likelihoods, marginal_likelihoods, posteriors)
+    pub fn run<R>(self, sample_values : &[Vector<N>], init : ModelInit, rng : &mut R) -> (Vec<f64>, Vec<Vector<N>>, Vec<Matrix<N>>, Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>)
+    where
+        R: Rng
+    {
+        let (cluster_weights, cluster_means, cluster_covariances) = self.init(sample_values, init, rng);
+
+        let (mut priors, mut likelihoods, mut marginal_likelihoods, mut posteriors) = self.e_step(sample_values, &cluster_weights, &cluster_means, &cluster_covariances);
+        let (mut cluster_weights, mut cluster_means, mut cluster_covariances)       = self.m_step(sample_values, &priors, &likelihoods, &marginal_likelihoods, &posteriors);
+        loop {
+            let (new_priors, new_likelihoods, new_marginal_likelihoods, new_posteriors) = self.e_step(sample_values, &cluster_weights, &cluster_means, &cluster_covariances);
+            let terminate = false;
+            priors = new_priors;
+            likelihoods = new_likelihoods;
+            marginal_likelihoods = new_marginal_likelihoods;
+            posteriors = new_posteriors;
+            if terminate {
+                break
             }
 
-            let old = self.cluster_covariances[cluster_index];
-            let new = total / weight * self.sample_count as f64 / (self.sample_count - 1) as f64;
-
-            self.delta += (new - old).into_array().into_iter().flatten().map(|x| x * x).sum::<f64>();
-            self.cluster_covariances[cluster_index] = total / weight * self.sample_count as f64 / (self.sample_count - 1) as f64;
+            let (new_cluster_weights, new_cluster_means, new_cluster_covariances) = self.m_step(sample_values, &priors, &likelihoods, &marginal_likelihoods, &posteriors);
+            let terminate = {
+                let update_cluster_weights     = new_cluster_weights    .iter().copied().zip(cluster_weights    .iter().copied()).map(|(x, y)| x - y).mse();
+                let update_cluster_means       = new_cluster_means      .iter().copied().zip(cluster_means      .iter().copied()).map(|(x, y)| x - y).mse();
+                let update_cluster_covariances = new_cluster_covariances.iter().copied().zip(cluster_covariances.iter().copied()).map(|(x, y)| x - y).mse();
+                update_cluster_weights + update_cluster_means + update_cluster_covariances <= 1e-4
+            };
+            cluster_weights = new_cluster_weights;
+            cluster_means = new_cluster_means;
+            cluster_covariances = new_cluster_covariances;
+            if terminate {
+                break
+            }
         }
 
-        self.delta /= self.cluster_count as f64;
+        (cluster_weights, cluster_means, cluster_covariances, priors, likelihoods, marginal_likelihoods, posteriors)
     }
-
-    pub fn finish(self) -> GaussianMixtureResult<N> {
-        GaussianMixtureResult {
-            sample_count : self.sample_count,
-            samples : self.samples,
-            cluster_count : self.cluster_count,
-            cluster_weights : self.cluster_weights,
-            cluster_means : self.cluster_means,
-            cluster_covariances : self.cluster_covariances,
-            likelihoods : self.likelihoods,
-            marginal_likelihoods : self.marginal_likelihoods,
-            priors : self.priors,
-            posteriors : self.posteriors,
-        }
-    }
-}
-
-/// Implementation of Gaussian Mixture Model
-pub fn gaussian_mixture<R, const N: usize, I>(rng : &mut R, init : ModelInit, k : NonZero<usize>, samples : I) -> GaussianMixtureResult<N>
-where
-    R: Rng,
-    I: IntoIterator<Item = Vector<N>>
-{
-    let mut state = GaussianMixture::new(rng, init, k, samples);
-    state.init();
-    for k in 1.. {
-        state.expectation_step();
-        state.maximization_step();
-
-        eprintln!("cluster: gaussian mixture model: iteration {k} => delta = {delta}", delta = state.delta);
-        if state.delta <= 1e-3 {
-            break
-        }
-    }
-    state.expectation_step();
-    state.finish()
 }
 
 #[cfg(test)]
@@ -235,15 +197,18 @@ mod tests {
             Vector::from_array([83.5]),
         ];
 
-        let result = gaussian_mixture(&mut thread_rng(), ModelInit::KMeanPlusPlus, NonZero::new(2).unwrap(), samples);
+        let sample_count = samples.len();
+        let cluster_count = 2;
+        let (cluster_weights, cluster_means, cluster_covariances, priors, likelihoods, marginal_likelihoods, posteriors) = GaussianMixture::new(sample_count, cluster_count).run(&samples, ModelInit::KMeanPlusPlus, &mut thread_rng());
 
-        assert!(result.cluster_weights    .iter().copied()                                            .all(f64::is_finite));
-        assert!(result.cluster_means      .iter().copied().map(Vector::into_array).flatten()          .all(f64::is_finite));
-        assert!(result.cluster_covariances.iter().copied().map(Matrix::into_array).flatten().flatten().all(f64::is_finite));
+        assert!(cluster_weights    .iter().copied()                                            .all(f64::is_finite));
+        assert!(cluster_means      .iter().copied().map(Vector::into_array).flatten()          .all(f64::is_finite));
+        assert!(cluster_covariances.iter().copied().map(Matrix::into_array).flatten().flatten().all(f64::is_finite));
 
-        assert!(result.likelihoods.         iter().copied().all(f64::is_finite));
-        assert!(result.marginal_likelihoods.iter().copied().all(f64::is_finite));
-        assert!(result.priors              .iter().copied().all(f64::is_finite));
-        assert!(result.posteriors          .iter().copied().all(f64::is_finite));
+        assert!(likelihoods.         iter().copied().all(f64::is_finite));
+        assert!(marginal_likelihoods.iter().copied().all(f64::is_finite));
+        assert!(priors              .iter().copied().all(f64::is_finite));
+        assert!(posteriors          .iter().copied().all(f64::is_finite));
     }
 }
+
