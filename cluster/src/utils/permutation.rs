@@ -15,6 +15,12 @@ impl Parity {
 
 pub struct Permutations<const N: usize>(PermutationsImpl<N>);
 
+impl<const N: usize> Default for Permutations<N> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<const N: usize> Permutations<N> {
     pub fn new() -> Self {
         Self(permutations_impl())
