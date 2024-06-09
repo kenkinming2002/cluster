@@ -3,10 +3,10 @@ use crate::Pixel;
 use crate::Image;
 
 use cluster::math::*;
-use cluster::ClusterModel;
-use cluster::init::ClusterInit;
-use cluster::k_means::*;
-use cluster::gaussian_mixture::*;
+use cluster::model::ClusterModel;
+use cluster::model::init::ModelInit;
+use cluster::model::k_means::*;
+use cluster::model::gaussian_mixture::*;
 
 use itertools::Itertools;
 use rand::prelude::*;
@@ -14,7 +14,7 @@ use std::num::NonZero;
 
 /// Posterize an image.
 pub trait Posterize {
-    fn posterize(&mut self, model : ClusterModel, k : NonZero<usize>, init : ClusterInit);
+    fn posterize(&mut self, model : ClusterModel, k : NonZero<usize>, init : ModelInit);
 }
 
 /// Implementation of [Posterize] trait for images.
@@ -31,7 +31,7 @@ where
     C: Convert<f64>, f64: Convert<C>,
     [P::Component; P::COMPONENT_COUNT] : ,
 {
-    fn posterize(&mut self, model : ClusterModel, k : NonZero<usize>, init : ClusterInit) {
+    fn posterize(&mut self, model : ClusterModel, k : NonZero<usize>, init : ModelInit) {
         let samples = self.pixels().map(|pixel| Vector::from_array(Pixel::into_array(*pixel).map(Convert::convert)));
         match model {
             ClusterModel::KMeans => {

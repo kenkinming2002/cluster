@@ -1,15 +1,15 @@
 use crate::math::Vector;
-use crate::slice_random_ext::SliceRandomExt;
+use crate::utils::slice_random_ext::SliceRandomExt;
 
 use rand::prelude::*;
 
 #[derive(Copy, Clone, Debug)]
-pub enum ClusterInit {
+pub enum ModelInit {
     Llyod,
     KMeanPlusPlus,
 }
 
-impl ClusterInit {
+impl ModelInit {
     pub(crate) fn init<'a, R, const N: usize>(self, rng : &'a mut R, samples : &'a [Vector<N>], k : usize) -> Vec<Vector<N>>
     where
         R: Rng

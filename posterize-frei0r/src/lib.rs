@@ -1,10 +1,10 @@
 #![feature(generic_nonzero)]
 
 use cluster::math::*;
-use cluster::ClusterModel;
-use cluster::init::ClusterInit;
-use cluster::k_means::*;
-use cluster::gaussian_mixture::*;
+use cluster::model::ClusterModel;
+use cluster::model::init::ModelInit;
+use cluster::model::k_means::*;
+use cluster::model::gaussian_mixture::*;
 
 use frei0r_rs::*;
 
@@ -52,8 +52,8 @@ impl Plugin for PosterizePlugin {
 
         #[allow(clippy::redundant_guards)]
         let init = match self.init.as_c_str() {
-            init if init == c"llyod" => ClusterInit::Llyod,
-            init if init == c"k-means++" => ClusterInit::KMeanPlusPlus,
+            init if init == c"llyod" => ModelInit::Llyod,
+            init if init == c"k-means++" => ModelInit::KMeanPlusPlus,
             init => panic!("Unsupported initialization method {init}", init = init.to_string_lossy()),
         };
 

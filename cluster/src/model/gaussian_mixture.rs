@@ -1,5 +1,5 @@
 use crate::math::*;
-use crate::init::ClusterInit;
+use crate::model::init::ModelInit;
 
 use rand::prelude::*;
 
@@ -28,7 +28,7 @@ where
     R: Rng
 {
     rng : &'a mut R,
-    init : ClusterInit,
+    init : ModelInit,
 
     sample_count : usize,
     samples      : Vec<Vector<N>>,
@@ -57,7 +57,7 @@ where
     ///
     /// The arguments are the same as in [TODO].
     #[allow(unused)]
-    pub fn new<I>(rng : &'a mut R, init : ClusterInit, k : NonZero<usize>, samples : I) -> Self
+    pub fn new<I>(rng : &'a mut R, init : ModelInit, k : NonZero<usize>, samples : I) -> Self
     where
         I: IntoIterator<Item = Vector<N>>
     {
@@ -193,7 +193,7 @@ where
 }
 
 /// Implementation of Gaussian Mixture Model
-pub fn gaussian_mixture<R, const N: usize, I>(rng : &mut R, init : ClusterInit, k : NonZero<usize>, samples : I) -> GaussianMixtureResult<N>
+pub fn gaussian_mixture<R, const N: usize, I>(rng : &mut R, init : ModelInit, k : NonZero<usize>, samples : I) -> GaussianMixtureResult<N>
 where
     R: Rng,
     I: IntoIterator<Item = Vector<N>>
@@ -235,7 +235,7 @@ mod tests {
             Vector::from_array([83.5]),
         ];
 
-        let result = gaussian_mixture(&mut thread_rng(), ClusterInit::KMeanPlusPlus, NonZero::new(2).unwrap(), samples);
+        let result = gaussian_mixture(&mut thread_rng(), ModelInit::KMeanPlusPlus, NonZero::new(2).unwrap(), samples);
 
         assert!(result.cluster_weights    .iter().copied()                                            .all(f64::is_finite));
         assert!(result.cluster_means      .iter().copied().map(Vector::into_array).flatten()          .all(f64::is_finite));

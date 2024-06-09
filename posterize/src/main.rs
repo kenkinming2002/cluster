@@ -1,8 +1,8 @@
 #![feature(generic_nonzero)]
 
 use posterize::Posterize;
-use cluster::ClusterModel;
-use cluster::init::ClusterInit;
+use cluster::model::ClusterModel;
+use cluster::model::init::ModelInit;
 
 use image::io::Reader as ImageReader;
 use image::DynamicImage;
@@ -22,7 +22,7 @@ enum OurClusterModel {
 }
 
 #[derive(Debug, Clone, Copy, ValueEnum)]
-enum OurClusterInit {
+enum OurModelInit {
     Llyod,
     KMeanPlusPlus,
 }
@@ -36,11 +36,11 @@ impl From<OurClusterModel> for ClusterModel {
     }
 }
 
-impl From<OurClusterInit> for ClusterInit {
-    fn from(value: OurClusterInit) -> Self {
+impl From<OurModelInit> for ModelInit {
+    fn from(value: OurModelInit) -> Self {
         match value {
-            OurClusterInit::Llyod => Self::Llyod,
-            OurClusterInit::KMeanPlusPlus => Self::KMeanPlusPlus,
+            OurModelInit::Llyod => Self::Llyod,
+            OurModelInit::KMeanPlusPlus => Self::KMeanPlusPlus,
         }
     }
 }
@@ -55,7 +55,7 @@ struct Cli {
     /// Clustering algorithm to use
     model : OurClusterModel,
     /// Initialization method in clustering algorithm
-    init : OurClusterInit,
+    init : OurModelInit,
     /// Number of color in output image/Parameter in clustering algorithm
     k : NonZero<usize>,
 }

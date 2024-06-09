@@ -1,6 +1,6 @@
-use crate::init::ClusterInit;
+use crate::model::init::ModelInit;
 use crate::math::Vector;
-use crate::slice_random_ext::SliceRandomExt as _;
+use crate::utils::slice_random_ext::SliceRandomExt as _;
 
 use rayon::prelude::*;
 use rand::prelude::*;
@@ -24,7 +24,7 @@ where
     R: Rng
 {
     rng : &'a mut R,
-    init : ClusterInit,
+    init : ModelInit,
 
     k : usize,
 
@@ -43,7 +43,7 @@ where
     /// Constructor.
     ///
     /// The arguments are the same as in [k_mean].
-    pub fn new<I>(rng : &'a mut R, init : ClusterInit, k : NonZero<usize>, samples : I) -> Self
+    pub fn new<I>(rng : &'a mut R, init : ModelInit, k : NonZero<usize>, samples : I) -> Self
     where
         I: IntoIterator<Item = Vector<N>>
     {
@@ -116,8 +116,8 @@ where
                 *total / *count as f64
             } else {
                 match self.init {
-                    ClusterInit::Llyod         =>                                                                                                 self.samples.choose(&mut self.rng).copied().unwrap(),
-                    ClusterInit::KMeanPlusPlus => self.samples.choose_with_weights(&mut self.rng, self.errors.iter()).copied().unwrap_or_else(|_| self.samples.choose(&mut self.rng).copied().unwrap()),
+                    ModelInit::Llyod         =>                                                                                                 self.samples.choose(&mut self.rng).copied().unwrap(),
+                    ModelInit::KMeanPlusPlus => self.samples.choose_with_weights(&mut self.rng, self.errors.iter()).copied().unwrap_or_else(|_| self.samples.choose(&mut self.rng).copied().unwrap()),
                 }
             }
         }
@@ -138,7 +138,7 @@ where
 }
 
 /// Implementation of K-Mean Clustering algorithm.
-pub fn k_mean<R, const N: usize, I>(rng : &mut R, init : ClusterInit, k : NonZero<usize>, samples : I) -> KMeanResult<N>
+pub fn k_mean<R, const N: usize, I>(rng : &mut R, init : ModelInit, k : NonZero<usize>, samples : I) -> KMeanResult<N>
 where
     R: Rng,
     I: IntoIterator<Item = Vector<N>>

@@ -1,6 +1,6 @@
-use crate::array_zip::ArrayZip;
-use crate::permutation::Parity;
-use crate::permutation::Permutations;
+use crate::utils::array_zip::ArrayZip;
+use crate::utils::permutation::Parity;
+use crate::utils::permutation::Permutations;
 
 use std::ops::Index;
 use std::ops::IndexMut;

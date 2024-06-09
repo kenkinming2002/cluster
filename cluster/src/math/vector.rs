@@ -1,4 +1,4 @@
-use crate::array_zip::ArrayZip;
+use crate::utils::array_zip::ArrayZip;
 
 use super::inner_product::InnerProduct as _;
 
