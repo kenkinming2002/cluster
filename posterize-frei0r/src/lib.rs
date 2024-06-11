@@ -1,5 +1,3 @@
-#![feature(generic_nonzero)]
-
 use cluster::math::*;
 use cluster::model::ClusterModel;
 use cluster::model::init::ModelInit;

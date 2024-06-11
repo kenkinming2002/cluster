@@ -37,7 +37,7 @@ impl<const N: usize> Iterator for Permutations<N> {
 type PermutationsImpl<const N: usize> = impl Iterator<Item = (Parity, [usize; N])>;
 
 fn permutations_impl<const N: usize>() -> PermutationsImpl<N> {
-    std::iter::from_coroutine(|| {
+    std::iter::from_coroutine(#[coroutine] || {
         let mut parity = Parity::Even;
         let mut item = std::array::from_fn(|i| i);
         loop {

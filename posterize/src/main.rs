@@ -1,5 +1,3 @@
-#![feature(generic_nonzero)]
-
 use posterize::Posterize;
 use cluster::model::ClusterModel;
 use cluster::model::init::ModelInit;

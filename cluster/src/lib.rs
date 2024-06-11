@@ -1,4 +1,3 @@
-#![feature(generic_nonzero)]
 #![feature(new_uninit)]
 #![feature(coroutines)]
 #![feature(iter_from_coroutine)]

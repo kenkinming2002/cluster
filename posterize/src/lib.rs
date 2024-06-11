@@ -1,5 +1,4 @@
 #![allow(incomplete_features)]
-#![feature(generic_nonzero)]
 #![feature(generic_const_exprs)]
 #![feature(new_uninit)]
 
