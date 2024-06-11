@@ -32,7 +32,7 @@ impl<const N: usize> GaussianMixture<N> {
 
         let cluster_weights = vec![1.0 / self.cluster_count as f64; self.cluster_count];
         let cluster_means = init.init(rng, sample_values, self.cluster_count);
-        let cluster_covariances = vec![Matrix::one(); self.cluster_count];
+        let cluster_covariances = vec![Matrix::one() * 0.01; self.cluster_count];
 
         (cluster_weights, cluster_means, cluster_covariances)
     }
