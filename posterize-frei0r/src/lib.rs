@@ -3,6 +3,7 @@ use cluster::model::ClusterModel;
 use cluster::model::init::ModelInit;
 use cluster::model::k_means::*;
 use cluster::model::gaussian_mixture::*;
+use cluster::model::agglomerative::*;
 
 use frei0r_rs::*;
 
@@ -44,6 +45,7 @@ impl Plugin for PosterizePlugin {
         let model = match self.model.as_c_str() {
             init if init == c"k-means" => ClusterModel::KMeans,
             init if init == c"gaussian-mixture" => ClusterModel::GaussianMixture,
+            init if init == c"agglomerative-single-linkage" => ClusterModel::AgglomerativeSingleLinkage,
             init => panic!("Unsupported initialization method {init}", init = init.to_string_lossy()),
         };
 
@@ -69,6 +71,26 @@ impl Plugin for PosterizePlugin {
                 let (_, cluster_means, _, _, _, _, posteriors) = GaussianMixture::new(sample_count, cluster_count).run(&samples, init, &mut thread_rng());
                 for (sample_index, pixel) in outframe.iter_mut().enumerate() {
                     let label = (0..cluster_count).map(|cluster_index| posteriors[cluster_index * sample_count + sample_index]).position_max_by(f64::total_cmp).unwrap();
+                    *pixel = u32::from_le_bytes(Vector::into_array(cluster_means[label]).map(|x| x as u8));
+                }
+            },
+            ClusterModel::AgglomerativeSingleLinkage => {
+                let sample_labels = agglomerative_single_linkage(&samples, cluster_count);
+
+                // Compute means. This is done for us in the case of k-means clustering cases as
+                // that is part of the expectation-maximization algorithm. However, we have to do
+                // it ourselves here.
+                let mut totals = vec![Vector::zero(); cluster_count];
+                let mut counts = vec![0;              cluster_count];
+                for (&label, &sample) in std::iter::zip(&sample_labels, &samples) {
+                    totals[label] += sample;
+                    counts[label] += 1;
+                }
+                let cluster_means = std::iter::zip(totals, counts).map(|(total, count)| total / count as f64).collect_vec();
+
+                // Same as K-Means clustering
+                for (sample_index, pixel) in outframe.iter_mut().enumerate() {
+                    let label = sample_labels[sample_index];
                     *pixel = u32::from_le_bytes(Vector::into_array(cluster_means[label]).map(|x| x as u8));
                 }
             },

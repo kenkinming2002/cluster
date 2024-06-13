@@ -2,8 +2,9 @@ use crate::math::Vector;
 use crate::utils::slice_random_ext::SliceRandomExt;
 
 use rand::prelude::*;
+use clap::ValueEnum;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug, Copy, Clone, ValueEnum)]
 pub enum ModelInit {
     Llyod,
     KMeanPlusPlus,

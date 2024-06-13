@@ -4,6 +4,7 @@
 pub enum ClusterModel {
     KMeans,
     GaussianMixture,
+    AgglomerativeSingleLinkage,
 }
 
 pub mod init;

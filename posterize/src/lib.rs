@@ -11,4 +11,5 @@ pub use convert::Convert;
 pub use pixel::Pixel;
 pub use image::Image;
 pub use posterize::Posterize;
+pub use posterize::PosterizeMethod;
 
