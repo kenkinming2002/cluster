@@ -51,6 +51,7 @@ impl App {
                 Event::KeyDown { keycode : Some(Keycode::R), .. } => self.cluster_state = Some(ClusterStateAny::reset()),
                 Event::KeyDown { keycode : Some(Keycode::K), .. } => self.cluster_state = Some(ClusterStateAny::from_sample_values_k_means(self.cluster_state.take().unwrap().into_sample_values())),
                 Event::KeyDown { keycode : Some(Keycode::G), .. } => self.cluster_state = Some(ClusterStateAny::from_sample_values_gaussian_mixture(self.cluster_state.take().unwrap().into_sample_values())),
+                Event::KeyDown { keycode : Some(Keycode::A), .. } => self.cluster_state = Some(ClusterStateAny::from_sample_values_agglomerative_single_linkage(self.cluster_state.take().unwrap().into_sample_values())),
                 Event::KeyDown { keycode : Some(Keycode::S), .. } => self.cluster_state = Some(self.cluster_state.take().unwrap().step()),
                 _ => {},
             }
@@ -63,6 +64,7 @@ pub fn main() {
     eprintln!("  Press r for get new random samples.");
     eprintln!("  Press k for k-means clustering.");
     eprintln!("  Press g for gaussian mixture model.");
+    eprintln!("  Press a for agglomerative single linkage model.");
     eprintln!("  Press s to step through the algorithm.");
 
     App::new().run()

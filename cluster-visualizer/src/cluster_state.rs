@@ -5,6 +5,7 @@ use cluster::math::Matrix;
 use cluster::model::init::ModelInit;
 use cluster::model::k_means::KMeans;
 use cluster::model::gaussian_mixture::GaussianMixture;
+use cluster::model::agglomerative::agglomerative_single_linkage;
 
 use itertools::Itertools;
 
@@ -208,10 +209,40 @@ impl ClusterState for GaussianMixtureClusterState {
     }
 }
 
+pub struct AgglomerativeSingleLinkageClusterState {
+    sample_values : Vec<Vector<2>>,
+    sample_labels : Vec<usize>,
+}
+
+impl ClusterState for AgglomerativeSingleLinkageClusterState {
+    fn from_sample_values(sample_values : Vec<Vector<2>>) -> Self {
+        let sample_labels = agglomerative_single_linkage(&sample_values, CLUSTER_COUNT);
+        Self { sample_values, sample_labels, }
+    }
+
+    fn into_sample_values(self) -> Vec<Vector<2>> {
+        self.sample_values
+    }
+
+    fn step(self) -> Self {
+        self
+    }
+
+    fn render(&self, mut render : Render<'_>) {
+        for (sample_value, sample_label) in std::iter::zip(&self.sample_values, &self.sample_labels) {
+            let r = lerp(*sample_label as f64 / CLUSTER_COUNT as f64, 32.0, 224.0) as u8;
+            let g = lerp(*sample_label as f64 / CLUSTER_COUNT as f64, 224.0, 32.0) as u8;
+            let b = lerp(*sample_label as f64 / CLUSTER_COUNT as f64, 64.0, 196.0) as u8;
+            render.draw_point(r, g, b, sample_value[0], sample_value[1], 5.0);
+        }
+    }
+}
+
 pub enum ClusterStateAny {
     None(NoneClusterState),
     KMeans(KMeansClusterState),
     GaussianMixture(GaussianMixtureClusterState),
+    AgglomerativeSingleLinkage(AgglomerativeSingleLinkageClusterState),
 }
 
 impl ClusterStateAny {
@@ -250,11 +281,16 @@ impl ClusterStateAny {
         Self::GaussianMixture(GaussianMixtureClusterState::from_sample_values(sample_values))
     }
 
+    pub fn from_sample_values_agglomerative_single_linkage(sample_values : Vec<Vector<2>>) -> Self {
+        Self::AgglomerativeSingleLinkage(AgglomerativeSingleLinkageClusterState::from_sample_values(sample_values))
+    }
+
     pub fn into_sample_values(self) -> Vec<Vector<2>> {
         match self {
             Self::None(inner) => inner.into_sample_values(),
             Self::KMeans(inner) => inner.into_sample_values(),
             Self::GaussianMixture(inner) => inner.into_sample_values(),
+            Self::AgglomerativeSingleLinkage(inner) => inner.into_sample_values(),
         }
     }
 
@@ -263,6 +299,7 @@ impl ClusterStateAny {
             Self::None(inner) => Self::None(inner.step()),
             Self::KMeans(inner) => Self::KMeans(inner.step()),
             Self::GaussianMixture(inner) => Self::GaussianMixture(inner.step()),
+            Self::AgglomerativeSingleLinkage(inner) => Self::AgglomerativeSingleLinkage(inner.step()),
         }
     }
 
@@ -271,6 +308,7 @@ impl ClusterStateAny {
             Self::None(inner) => inner.render(render),
             Self::KMeans(inner) => inner.render(render),
             Self::GaussianMixture(inner) => inner.render(render),
+            Self::AgglomerativeSingleLinkage(inner) => inner.render(render),
         }
     }
 }
