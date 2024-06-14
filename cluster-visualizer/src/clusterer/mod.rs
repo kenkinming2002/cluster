@@ -2,11 +2,13 @@ pub mod none;
 pub mod k_means;
 pub mod gaussian_mixture;
 pub mod agglomerative_single_linkage;
+pub mod affinity_propagation;
 
 pub use none::NoneClusterer;
 pub use k_means::KMeansClusterer;
 pub use gaussian_mixture::GaussianMixtureClusterer;
 pub use agglomerative_single_linkage::AgglomerativeSingleLinkageClusterer;
+pub use affinity_propagation::AffinityPropagationClusterer;
 
 use cluster::math::Vector;
 
