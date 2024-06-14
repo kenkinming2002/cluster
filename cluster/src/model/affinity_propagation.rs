@@ -45,7 +45,7 @@ impl AffinityPropagation {
                     .max_by(|a, b| f64::partial_cmp(a, b).unwrap())
                     .unwrap();
 
-                self.responsiblities[i * self.sample_count + k] = lerp(new_responsibility, self.responsiblities[i * self.sample_count + k], damping);
+                self.responsiblities[i * self.sample_count + k] = lerp(damping, new_responsibility, self.responsiblities[i * self.sample_count + k]);
             }
         }
 
@@ -65,9 +65,10 @@ impl AffinityPropagation {
                     new_availability = new_availability.min(0.0);
                 }
 
-                self.availabilities[i * self.sample_count + k] = lerp(new_availability, self.availabilities[i * self.sample_count + k], damping);
+                self.availabilities[i * self.sample_count + k] = lerp(damping, new_availability, self.availabilities[i * self.sample_count + k]);
             }
         }
+
     }
 
     pub fn exemplers(&self) -> Vec<usize> {

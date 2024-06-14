@@ -65,7 +65,7 @@ pub fn main() {
             Event::KeyDown { keycode : Some(Keycode::K), .. } => clusterer = KMeansClusterer::new(clusterer.into_raw(), 10),
             Event::KeyDown { keycode : Some(Keycode::G), .. } => clusterer = GaussianMixtureClusterer::new(clusterer.into_raw(), 10),
             Event::KeyDown { keycode : Some(Keycode::A), .. } => clusterer = AgglomerativeSingleLinkageClusterer::new(clusterer.into_raw(), 10),
-            Event::KeyDown { keycode : Some(Keycode::P), .. } => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.5, 0.5),
+            Event::KeyDown { keycode : Some(Keycode::P), .. } => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.5, 0.7),
 
             // Update Clusterer
             Event::KeyDown { keycode : Some(Keycode::S), .. } => clusterer.update(),
