@@ -32,18 +32,39 @@ impl Ord for Edge {
 
 /// Implementation of single-linkage agglomerative clustering.
 pub fn agglomerative_single_linkage<const N: usize>(samples : &[Vector<N>], cluster_count : usize) -> Vec<usize> {
-    let mut edges = Vec::with_capacity(samples.len() * (samples.len() - 1) / 2);
-    for index1 in 0..samples.len() {
-        for index2 in index1+1..samples.len() {
-            let _ = edges.push_within_capacity(Edge {
-                index1,
-                index2,
-                distance : (samples[index1] - samples[index2]).squared_length(),
-            });
+    // 1: Use Prim's algorithm to construct a MST where weights are distances between samples.
+    let mut edges = Vec::new();
+    {
+        // We use the special value samples.len() in min_vertices array to indicate that a vertex
+        // has been visited.
+        let mut min_vertices = vec![0; samples.len()];
+        let mut min_costs = samples.iter().map(|&sample| (sample - samples[0]).squared_length()).collect::<Vec<_>>();
+        min_vertices[0] = samples.len();
+
+        while let Some((vertex, (min_vertex, min_cost))) = std::iter::zip(min_vertices.iter().copied(), min_costs.iter().copied())
+            .enumerate()
+            .filter(|&(_, (min_vertex, _))| min_vertex != samples.len())
+            .min_by(|&(_, (_, min_cost1)), &(_, (_, min_cost2))| f64::partial_cmp(&min_cost1, &min_cost2).unwrap())
+        {
+            edges.push(Edge { index1 : vertex, index2 : min_vertex, distance : min_cost });
+
+            min_vertices[vertex] = samples.len();
+            for other_vertex in 0..samples.len() {
+                if min_vertices[other_vertex] != samples.len() {
+                    let cost = (samples[other_vertex] - samples[vertex]).squared_length();
+                    if min_costs[other_vertex] > cost {
+                        min_costs[other_vertex] = cost;
+                        min_vertices[other_vertex] = vertex;
+                    }
+                }
+            }
         }
     }
+
+    // 2: Construct a max heap
     let mut edges = BinaryHeap::from(edges);
 
+    // 3: Use the heap
     let mut disjoint_set = DisjointSet::new(samples.len());
     while disjoint_set.connected_component_count() > cluster_count {
         let edge = edges.pop().unwrap();
