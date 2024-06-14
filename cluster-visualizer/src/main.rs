@@ -1,9 +1,13 @@
+mod utils;
+
 mod render;
 use render::Render;
 
 mod clusterer;
 
 use clusterer::random_samples;
+use clusterer::image_samples;
+use clusterer::ImagePlane;
 
 use clusterer::Clusterer;
 use clusterer::NoneClusterer;
@@ -18,6 +22,11 @@ use sdl2::pixels::Color;
 pub fn main() {
     eprintln!("Intructions:");
     eprintln!("  Press r for get new random samples.");
+
+    eprintln!("  Press numpad 1 to load samples from RG plane of image.");
+    eprintln!("  Press numpad 2 to load samples from RB plane of image.");
+    eprintln!("  Press numpad 3 to load samples from GB plane of image.");
+
     eprintln!("  Press k for k-means clustering.");
     eprintln!("  Press g for gaussian mixture model.");
     eprintln!("  Press a for agglomerative single linkage model.");
@@ -41,8 +50,11 @@ pub fn main() {
         canvas.present();
 
         match event_pump.wait_event() {
-            // New clusterer with random samples
+            // New clusterer with new samples
             Event::KeyDown { keycode : Some(Keycode::R), .. } => clusterer = NoneClusterer::new(random_samples()),
+            Event::KeyDown { keycode : Some(Keycode::Kp1), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::RG)),
+            Event::KeyDown { keycode : Some(Keycode::Kp2), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::RB)),
+            Event::KeyDown { keycode : Some(Keycode::Kp3), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::GB)),
 
             // Change Clusterer but keep samples
             Event::KeyDown { keycode : Some(Keycode::K), .. } => clusterer = KMeansClusterer::new(clusterer.into_raw(), 10),

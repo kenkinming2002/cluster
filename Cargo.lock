@@ -308,6 +308,7 @@ name = "cluster-visualizer"
 version = "0.1.0"
 dependencies = [
  "cluster",
+ "image",
  "itertools 0.13.0",
  "rand",
  "rand_distr",

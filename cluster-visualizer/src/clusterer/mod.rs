@@ -54,3 +54,25 @@ pub fn random_samples() -> Vec<Vector<2>> {
     samples
 }
 
+pub enum ImagePlane {
+    RG,
+    GB,
+    RB,
+}
+
+/// Load samples from a image.
+///
+/// Unfortunately, pixels usually composed of 3 components R, G, B, but we can only deal with two
+/// of them.
+pub fn image_samples(plane : ImagePlane) -> Vec<Vector<2>> {
+    use crate::utils::choose_file;
+    use image::io::Reader as ImageReader;
+
+    let image_filepath = choose_file();
+    let image = ImageReader::open(image_filepath).unwrap().decode().unwrap();
+    image.to_rgb32f().pixels().map(|pixel| match plane {
+        ImagePlane::RG => Vector::from_array([ pixel.0[0] as f64, pixel.0[1] as f64, ]),
+        ImagePlane::RB => Vector::from_array([ pixel.0[0] as f64, pixel.0[2] as f64, ]),
+        ImagePlane::GB => Vector::from_array([ pixel.0[1] as f64, pixel.0[2] as f64, ]),
+    }).collect()
+}
