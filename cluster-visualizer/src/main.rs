@@ -17,6 +17,7 @@ use clusterer::AgglomerativeSingleLinkageClusterer;
 use clusterer::AffinityPropagationClusterer;
 
 use sdl2::event::Event;
+use sdl2::event::EventType;
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 
@@ -50,7 +51,9 @@ pub fn main() {
         clusterer.render(Render::new(&mut canvas));
         canvas.present();
 
-        match event_pump.wait_event() {
+        let event = event_pump.wait_event();
+        event_pump.disable_event(EventType::KeyDown); // Prevent events from piling up if computation takes a long time
+        match event {
             // New clusterer with new samples
             Event::KeyDown { keycode : Some(Keycode::R), .. } => clusterer = NoneClusterer::new(random_samples()),
             Event::KeyDown { keycode : Some(Keycode::Kp1), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::RG)),
@@ -70,6 +73,7 @@ pub fn main() {
             Event::Quit {..} => break,
             _ => {},
         }
+        event_pump.enable_event(EventType::KeyDown);
     }
 }
 
