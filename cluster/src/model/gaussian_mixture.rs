@@ -10,8 +10,8 @@ use rand::prelude::*;
 /// Implementation of Gaussian mixture model Clustering algorithm.
 #[derive(Debug, Copy, Clone)]
 pub struct GaussianMixture<const N: usize> {
-    sample_count : usize,
-    cluster_count : usize,
+    pub sample_count : usize,
+    pub cluster_count : usize,
 }
 
 impl<const N: usize> GaussianMixture<N> {

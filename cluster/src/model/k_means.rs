@@ -6,8 +6,8 @@ use rand::prelude::*;
 /// Implementation of K-Means Clustering algorithm.
 #[derive(Debug, Copy, Clone)]
 pub struct KMeans<const N: usize> {
-    sample_count : usize,
-    cluster_count : usize,
+    pub sample_count : usize,
+    pub cluster_count : usize,
 }
 
 impl<const N: usize> KMeans<N> {

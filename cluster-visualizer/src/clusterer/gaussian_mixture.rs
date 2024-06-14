@@ -10,14 +10,14 @@ use itertools::Itertools;
 use crate::render::Render;
 
 use super::Clusterer;
-use super::SAMPLE_COUNT;
-use super::CLUSTER_COUNT;
 
 fn lerp(a : f64, low : f64, high : f64) -> f64 {
     low + a * (high - low)
 }
 
 pub struct GaussianMixtureClusterer {
+    gaussian_mixture : GaussianMixture<2>,
+
     sample_values : Vec<Vector<2>>,
 
     cluster_weights     : Vec<f64>,
@@ -30,14 +30,17 @@ pub struct GaussianMixtureClusterer {
     posteriors           : Vec<f64>,
 }
 
-impl Clusterer for GaussianMixtureClusterer {
-    fn from_sample_values(sample_values : Vec<Vector<2>>) -> Box<Self> {
-        let gaussian_mixture = GaussianMixture::new(SAMPLE_COUNT, CLUSTER_COUNT);
+impl GaussianMixtureClusterer {
+    pub fn new(samples : Vec<Vector<2>>, cluster_count : usize) -> Box<Self> {
+        let gaussian_mixture = GaussianMixture::new(samples.len(), cluster_count);
 
-        let (cluster_weights, cluster_means, cluster_covariances)   = gaussian_mixture.init(&sample_values, ModelInit::KMeanPlusPlus, &mut thread_rng());
+        let sample_values = samples;
+        let (cluster_weights, cluster_means, cluster_covariances) = gaussian_mixture.init(&sample_values, ModelInit::KMeanPlusPlus, &mut thread_rng());
         let (priors, likelihoods, marginal_likelihoods, posteriors) = gaussian_mixture.e_step(&sample_values, &cluster_weights, &cluster_means, &cluster_covariances);
 
         Box::new(Self {
+            gaussian_mixture,
+
             sample_values,
 
             cluster_weights,
@@ -50,20 +53,20 @@ impl Clusterer for GaussianMixtureClusterer {
             posteriors,
         })
     }
+}
 
-    fn into_sample_values(self : Box<Self>) -> Vec<Vector<2>> {
+impl Clusterer for GaussianMixtureClusterer {
+    fn into_raw(self : Box<Self>) -> Vec<Vector<2>> {
         self.sample_values
     }
 
     fn update(&mut self) {
-        let gaussian_mixture = GaussianMixture::new(SAMPLE_COUNT, CLUSTER_COUNT);
-
-        let (cluster_weights, cluster_means, cluster_covariances)   = gaussian_mixture.m_step(&self.sample_values, &self.priors, &self.likelihoods, &self.marginal_likelihoods, &self.posteriors);
+        let (cluster_weights, cluster_means, cluster_covariances) = self.gaussian_mixture.m_step(&self.sample_values, &self.priors, &self.likelihoods, &self.marginal_likelihoods, &self.posteriors);
         self.cluster_weights = cluster_weights;
         self.cluster_means = cluster_means;
         self.cluster_covariances = cluster_covariances;
 
-        let (priors, likelihoods, marginal_likelihoods, posteriors) = gaussian_mixture.e_step(&self.sample_values, &self.cluster_weights, &self.cluster_means, &self.cluster_covariances);
+        let (priors, likelihoods, marginal_likelihoods, posteriors) = self.gaussian_mixture.e_step(&self.sample_values, &self.cluster_weights, &self.cluster_means, &self.cluster_covariances);
         self.priors = priors;
         self.likelihoods = likelihoods;
         self.marginal_likelihoods = marginal_likelihoods;
@@ -73,10 +76,10 @@ impl Clusterer for GaussianMixtureClusterer {
 
     fn render(&self, mut render : Render<'_>) {
         for (sample_index, sample_value) in self.sample_values.iter().enumerate() {
-            let sample_label = (0..CLUSTER_COUNT).map(|cluster_index| self.posteriors[cluster_index * SAMPLE_COUNT + sample_index]).position_max_by(f64::total_cmp).unwrap();
-            let r = lerp(sample_label as f64 / CLUSTER_COUNT as f64, 32.0, 224.0) as u8;
-            let g = lerp(sample_label as f64 / CLUSTER_COUNT as f64, 224.0, 32.0) as u8;
-            let b = lerp(sample_label as f64 / CLUSTER_COUNT as f64, 64.0, 196.0) as u8;
+            let sample_label = (0..self.gaussian_mixture.cluster_count).map(|cluster_index| self.posteriors[cluster_index * self.gaussian_mixture.sample_count + sample_index]).position_max_by(f64::total_cmp).unwrap();
+            let r = lerp(sample_label as f64 / self.gaussian_mixture.cluster_count as f64, 32.0, 224.0) as u8;
+            let g = lerp(sample_label as f64 / self.gaussian_mixture.cluster_count as f64, 224.0, 32.0) as u8;
+            let b = lerp(sample_label as f64 / self.gaussian_mixture.cluster_count as f64, 64.0, 196.0) as u8;
             render.draw_point(r, g, b, sample_value[0], sample_value[1], 5.0);
         }
 

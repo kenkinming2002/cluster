@@ -3,22 +3,24 @@ use super::Clusterer;
 use crate::render::Render;
 
 pub struct NoneClusterer {
-    sample_values : Vec<Vector<2>>,
+    samples : Vec<Vector<2>>,
+}
+
+impl NoneClusterer {
+    pub fn new(samples : Vec<Vector<2>>) -> Box<Self> {
+        Box::new(Self { samples })
+    }
 }
 
 impl Clusterer for NoneClusterer {
-    fn from_sample_values(sample_values : Vec<Vector<2>>) -> Box<Self> where Self: Sized {
-        Box::new(Self { sample_values })
-    }
-
-    fn into_sample_values(self : Box<Self>) -> Vec<Vector<2>> {
-        self.sample_values
+    fn into_raw(self : Box<Self>) -> Vec<Vector<2>> {
+        self.samples
     }
 
     fn update(&mut self) {}
 
     fn render(&self, mut render : Render<'_>) {
-        for sample_value in &self.sample_values {
+        for sample_value in &self.samples {
             let r = 255;
             let g = 0;
             let b = 0;

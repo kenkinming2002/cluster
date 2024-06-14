@@ -2,6 +2,9 @@ mod render;
 use render::Render;
 
 mod clusterer;
+
+use clusterer::random_samples;
+
 use clusterer::Clusterer;
 use clusterer::NoneClusterer;
 use clusterer::KMeansClusterer;
@@ -30,7 +33,7 @@ pub fn main() {
         .into_canvas()
         .build().unwrap();
 
-    let mut clusterer = NoneClusterer::new_random() as Box<dyn Clusterer>;
+    let mut clusterer = NoneClusterer::new(random_samples()) as Box<dyn Clusterer>;
     loop {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
@@ -39,12 +42,12 @@ pub fn main() {
 
         match event_pump.wait_event() {
             // New clusterer with random samples
-            Event::KeyDown { keycode : Some(Keycode::R), .. } => clusterer = NoneClusterer::new_random(),
+            Event::KeyDown { keycode : Some(Keycode::R), .. } => clusterer = NoneClusterer::new(random_samples()),
 
             // Change Clusterer but keep samples
-            Event::KeyDown { keycode : Some(Keycode::K), .. } => clusterer = KMeansClusterer::from_sample_values(clusterer.into_sample_values()),
-            Event::KeyDown { keycode : Some(Keycode::G), .. } => clusterer = GaussianMixtureClusterer::from_sample_values(clusterer.into_sample_values()),
-            Event::KeyDown { keycode : Some(Keycode::A), .. } => clusterer = AgglomerativeSingleLinkageClusterer::from_sample_values(clusterer.into_sample_values()),
+            Event::KeyDown { keycode : Some(Keycode::K), .. } => clusterer = KMeansClusterer::new(clusterer.into_raw(), 10),
+            Event::KeyDown { keycode : Some(Keycode::G), .. } => clusterer = GaussianMixtureClusterer::new(clusterer.into_raw(), 10),
+            Event::KeyDown { keycode : Some(Keycode::A), .. } => clusterer = AgglomerativeSingleLinkageClusterer::new(clusterer.into_raw(), 10),
 
             // Update Clusterer
             Event::KeyDown { keycode : Some(Keycode::S), .. } => clusterer.update(),
