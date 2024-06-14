@@ -32,6 +32,7 @@ pub fn main() {
     eprintln!("  Press k for k-means clustering.");
     eprintln!("  Press g for gaussian mixture model.");
     eprintln!("  Press a for agglomerative single linkage model.");
+    eprintln!("  Press p for affinity propagation");
     eprintln!("  Press s to step through the algorithm.");
 
     let sdl_context = sdl2::init().unwrap();
