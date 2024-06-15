@@ -77,9 +77,8 @@ impl AffinityPropagation {
             .collect()
     }
 
-    pub fn exemplers_and_labels(&self) -> (Vec<usize>, Vec<usize>) {
-        let exemplers = self.exemplers();
-        let labels = (0..self.sample_count)
+    pub fn labels(&self, exemplers : &[usize]) -> Vec<usize> {
+        (0..self.sample_count)
             .map(|i| {
                 exemplers
                     .iter()
@@ -87,9 +86,7 @@ impl AffinityPropagation {
                     .position_max_by(|a, b| f64::partial_cmp(a, b).unwrap())
                     .unwrap_or(0)
             })
-            .collect();
-
-        (exemplers, labels)
+            .collect()
     }
 }
 
@@ -103,9 +100,14 @@ where
     S: Fn(&T, &T) -> f64,
 {
     let mut ap = AffinityPropagation::new(samples, similarity, preference);
-    for _ in 0..1000 {
-        ap.update(damping);
+    let mut exemplers = { ap.update(damping); ap.exemplers() };
+    loop {
+        let new_exemplers = { ap.update(damping); ap.exemplers() };
+        if !exemplers.is_empty() && exemplers == new_exemplers {
+            let labels = ap.labels(&exemplers);
+            break (exemplers, labels)
+        }
+        exemplers = new_exemplers;
     }
-    ap.exemplers_and_labels()
 }
 

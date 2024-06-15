@@ -22,8 +22,10 @@ pub struct AffinityPropagationClusterer {
 impl AffinityPropagationClusterer {
     pub fn new(samples : Vec<Vector<2>>, preference : f64, damping : f64) -> Box<Self> {
         let sample_values = samples;
+        let sample_labels = vec![0; sample_values.len()];
+
         let affinity_propagation = AffinityPropagation::new(&sample_values, |&sample1, &sample2| -(sample1 - sample2).squared_length(), preference);
-        let (exemplers, sample_labels) = affinity_propagation.exemplers_and_labels();
+        let exemplers = affinity_propagation.exemplers();
 
         Box::new(Self {
             affinity_propagation,
@@ -42,10 +44,10 @@ impl Clusterer for AffinityPropagationClusterer {
 
     fn update(&mut self) {
         self.affinity_propagation.update(self.damping);
-
-        let (exemplers, sample_labels) = self.affinity_propagation.exemplers_and_labels();
-        self.exemplers = exemplers;
-        self.sample_labels = sample_labels;
+        self.exemplers = self.affinity_propagation.exemplers();
+        if !self.exemplers.is_empty() {
+            self.sample_labels = self.affinity_propagation.labels(&self.exemplers);
+        }
     }
 
     fn render(&self, mut render : Render<'_>) {
