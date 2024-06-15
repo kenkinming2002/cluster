@@ -51,12 +51,27 @@ impl Clusterer for AffinityPropagationClusterer {
     }
 
     fn render(&self, mut render : Render<'_>) {
-        for (sample_value, sample_label) in std::iter::zip(&self.sample_values, &self.sample_labels) {
-            let ratio = if !self.exemplers.is_empty() { *sample_label as f64 / self.exemplers.len() as f64 } else { 0.0 };
-            let r = lerp(ratio, 32.0, 224.0) as u8;
-            let g = lerp(ratio, 224.0, 32.0) as u8;
-            let b = lerp(ratio, 64.0, 196.0) as u8;
-            render.draw_point(r, g, b, sample_value[0], sample_value[1], 5.0);
+        for (sample_index, (&sample_value, &sample_label)) in std::iter::zip(&self.sample_values, &self.sample_labels).enumerate() {
+            // The sample_labels array we get are actually indices into the exemplers array which
+            // then are indices into sample_values array. This ensure that labels array is kinda
+            // contiguous.
+            if let Some(&exempler_index) = self.exemplers.get(sample_label) {
+                if sample_index == exempler_index {
+                    // Exempler
+                    render.draw_point(0, 0, 255, sample_value[0], sample_value[1], 10.0);
+                } else {
+                    // Other point
+                    let ratio = if !self.exemplers.is_empty() { sample_label as f64 / self.exemplers.len() as f64 } else { 0.0 };
+                    let r = lerp(ratio, 0.0, 255.0) as u8;
+                    let g = lerp(ratio, 255.0, 0.0) as u8;
+                    render.draw_line(r, g, 0, sample_value[0], sample_value[1], self.sample_values[exempler_index][0], self.sample_values[exempler_index][1]);
+                    render.draw_point(r, g, 0, sample_value[0], sample_value[1], 5.0);
+                }
+            } else {
+                // This mean we do not actually have any exemplers yet, and the labels are dummy
+                // value we put in initially or some outdated values.
+                render.draw_point(255, 0, 0, sample_value[0], sample_value[1], 5.0);
+            }
         }
     }
 }

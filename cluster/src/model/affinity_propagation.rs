@@ -77,6 +77,7 @@ impl AffinityPropagation {
             .collect()
     }
 
+    /// Return labels for each sample as indices into the exemplers array.
     pub fn labels(&self, exemplers : &[usize]) -> Vec<usize> {
         (0..self.sample_count)
             .map(|i| {

@@ -21,6 +21,15 @@ impl<'a> Render<'a> {
         self.canvas.draw_point(((x / size * self.width as f64) as i32, (y / size * self.height as f64) as i32)).unwrap();
     }
 
+    pub fn draw_line(&mut self, r : u8, g : u8, b : u8, x1 : f64, y1 : f64, x2 : f64, y2 : f64) {
+        self.canvas.set_draw_color(Color::RGB(r, g, b));
+        self.canvas.set_scale(1.0, 1.0).unwrap();
+        self.canvas.draw_line(
+            ((x1 * self.width as f64) as i32, (y1 * self.height as f64) as i32),
+            ((x2 * self.width as f64) as i32, (y2 * self.height as f64) as i32),
+        ).unwrap();
+    }
+
     pub fn draw_ellipse_scaled(&mut self, r : u8, g : u8, b : u8, x : f64, y : f64, rx : f64, ry : f64, angle : f64, sx : f64, sy : f64) {
         self.canvas.set_draw_color(Color::RGB(r, g, b));
         self.canvas.set_scale(1.0, 1.0).unwrap();
