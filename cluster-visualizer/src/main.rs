@@ -15,6 +15,7 @@ use clusterer::KMeansClusterer;
 use clusterer::GaussianMixtureClusterer;
 use clusterer::AgglomerativeSingleLinkageClusterer;
 use clusterer::AffinityPropagationClusterer;
+use clusterer::DbscanClusterer;
 
 use sdl2::event::Event;
 use sdl2::event::EventType;
@@ -33,6 +34,7 @@ pub fn main() {
     eprintln!("  Press g for gaussian mixture model.");
     eprintln!("  Press a for agglomerative single linkage model.");
     eprintln!("  Press p for affinity propagation");
+    eprintln!("  Press d for dbscan(Density-based spatial clustering of applications with noise)");
     eprintln!("  Press t to to start/stop stepping through the algorithm automatically");
     eprintln!("  Press s to step through the algorithm.");
 
@@ -68,6 +70,7 @@ pub fn main() {
                 Event::KeyDown { keycode : Some(Keycode::G), .. } => clusterer = GaussianMixtureClusterer::new(clusterer.into_raw(), 10),
                 Event::KeyDown { keycode : Some(Keycode::A), .. } => clusterer = AgglomerativeSingleLinkageClusterer::new(clusterer.into_raw(), 10),
                 Event::KeyDown { keycode : Some(Keycode::P), .. } => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.1, 0.7),
+                Event::KeyDown { keycode : Some(Keycode::D), .. } => clusterer = DbscanClusterer::new(clusterer.into_raw(), 0.03, 8),
 
                 // Update Clusterer
                 Event::KeyDown { keycode : Some(Keycode::T), .. } => running = !running,
