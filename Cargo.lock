@@ -849,6 +849,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "posterize-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "image",
+ "posterize",
+]
+
+[[package]]
 name = "posterize-frei0r"
 version = "0.1.0"
 dependencies = [

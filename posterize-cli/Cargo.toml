@@ -1,0 +1,10 @@
+[package]
+name = "posterize-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+clap = { version = "4.5.7", features = ["derive"] }
+image = "0.25.1"
+posterize = { version = "0.1.0", path = "../posterize" }
