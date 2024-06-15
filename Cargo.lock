@@ -839,13 +839,9 @@ dependencies = [
 name = "posterize"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "clap",
  "cluster",
- "image",
- "itertools 0.13.0",
  "rand",
- "rayon",
 ]
 
 [[package]]
@@ -864,8 +860,7 @@ version = "0.1.0"
 dependencies = [
  "cluster",
  "frei0r-rs",
- "itertools 0.13.0",
- "rand",
+ "posterize",
 ]
 
 [[package]]

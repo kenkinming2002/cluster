@@ -5,12 +5,12 @@ use rand::prelude::*;
 use clap::ValueEnum;
 
 #[derive(Debug, Copy, Clone, ValueEnum)]
-pub enum ModelInit {
+pub enum ClusterInit {
     Llyod,
     KMeanPlusPlus,
 }
 
-impl ModelInit {
+impl ClusterInit {
     pub(crate) fn init<'a, R, const N: usize>(self, rng : &'a mut R, samples : &'a [Vector<N>], k : usize) -> Vec<Vector<N>>
     where
         R: Rng

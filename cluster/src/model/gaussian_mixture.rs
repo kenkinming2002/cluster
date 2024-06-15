@@ -3,7 +3,7 @@ use crate::math::Matrix;
 use crate::math::OuterProduct;
 use crate::math::MseIteratorExt;
 use crate::math::MultivariateGaussian;
-use crate::model::init::ModelInit;
+use crate::model::init::ClusterInit;
 
 use rand::prelude::*;
 
@@ -24,7 +24,7 @@ impl<const N: usize> GaussianMixture<N> {
     ///
     /// **Inputs**:  (sample_values) <br/>
     /// **Outputs**: (cluster_weights, cluster_means, cluster_covariances)
-    pub fn init<R>(self, sample_values : &[Vector<N>], init : ModelInit, rng : &mut R) -> (Vec<f64>, Vec<Vector<N>>, Vec<Matrix<N>>)
+    pub fn init<R>(self, sample_values : &[Vector<N>], init : ClusterInit, rng : &mut R) -> (Vec<f64>, Vec<Vector<N>>, Vec<Matrix<N>>)
     where
         R: Rng
     {
@@ -137,7 +137,7 @@ impl<const N: usize> GaussianMixture<N> {
     ///
     /// **Inputs**:  (sample_values) <br/>
     /// **Outputs**: (cluster_weights, cluster_means, cluster_covariances, priors, likelihoods, marginal_likelihoods, posteriors)
-    pub fn run<R>(self, sample_values : &[Vector<N>], init : ModelInit, rng : &mut R) -> (Vec<f64>, Vec<Vector<N>>, Vec<Matrix<N>>, Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>)
+    pub fn run<R>(self, sample_values : &[Vector<N>], init : ClusterInit, rng : &mut R) -> (Vec<f64>, Vec<Vector<N>>, Vec<Matrix<N>>, Vec<f64>, Vec<f64>, Vec<f64>, Vec<f64>)
     where
         R: Rng
     {
@@ -199,7 +199,7 @@ mod tests {
 
         let sample_count = samples.len();
         let cluster_count = 2;
-        let (cluster_weights, cluster_means, cluster_covariances, priors, likelihoods, marginal_likelihoods, posteriors) = GaussianMixture::new(sample_count, cluster_count).run(&samples, ModelInit::KMeanPlusPlus, &mut thread_rng());
+        let (cluster_weights, cluster_means, cluster_covariances, priors, likelihoods, marginal_likelihoods, posteriors) = GaussianMixture::new(sample_count, cluster_count).run(&samples, ClusterInit::KMeanPlusPlus, &mut thread_rng());
 
         assert!(cluster_weights    .iter().copied()                                            .all(f64::is_finite));
         assert!(cluster_means      .iter().copied().map(Vector::into_array).flatten()          .all(f64::is_finite));

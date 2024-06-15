@@ -9,5 +9,4 @@ crate-type = ["cdylib"]
 [dependencies]
 cluster = { version = "0.1.0", path = "../cluster" }
 frei0r-rs = { git = "https://gitlab.com/kwokkinming/frei0r-rs.git", version = "0.1.0" }
-itertools = "0.13.0"
-rand = "0.8.5"
+posterize = { version = "0.1.0", path = "../posterize" }

@@ -1,5 +1,5 @@
 use crate::math::Vector;
-use crate::model::init::ModelInit;
+use crate::model::init::ClusterInit;
 
 use rand::prelude::*;
 
@@ -20,7 +20,7 @@ impl<const N: usize> KMeans<N> {
     ///
     /// **Inputs**:  (sample_values) <br/>
     /// **Outputs**: (cluster_means)
-    pub fn init<R>(self, sample_values : &[Vector<N>], init : ModelInit, rng : &mut R) -> (Vec<Vector<N>>, )
+    pub fn init<R>(self, sample_values : &[Vector<N>], init : ClusterInit, rng : &mut R) -> (Vec<Vector<N>>, )
     where
         R: Rng
     {
@@ -86,7 +86,7 @@ impl<const N: usize> KMeans<N> {
     ///
     /// **Inputs**:  (sample_values) <br/>
     /// **Outputs**: (cluster_means, sample_labels, sample_errors)
-    pub fn run<R>(self, sample_values : &[Vector<N>], init : ModelInit, rng : &mut R) -> (Vec<Vector<N>>, Vec<usize>, Vec<f64>)
+    pub fn run<R>(self, sample_values : &[Vector<N>], init : ClusterInit, rng : &mut R) -> (Vec<Vector<N>>, Vec<usize>, Vec<f64>)
     where
         R: Rng
     {

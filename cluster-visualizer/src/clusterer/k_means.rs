@@ -1,5 +1,5 @@
 use cluster::math::Vector;
-use cluster::model::init::ModelInit;
+use cluster::model::init::ClusterInit;
 use cluster::model::k_means::KMeans;
 
 use rand::prelude::*;
@@ -27,7 +27,7 @@ impl KMeansClusterer {
         let k_means = KMeans::new(samples.len(), cluster_count);
 
         let sample_values = samples;
-        let (cluster_means,) = k_means.init(&sample_values, ModelInit::KMeanPlusPlus, &mut thread_rng());
+        let (cluster_means,) = k_means.init(&sample_values, ClusterInit::KMeanPlusPlus, &mut thread_rng());
         let (sample_labels, sample_errors) = k_means.e_step(&sample_values, &cluster_means);
 
         Box::new(Self { k_means, cluster_means, sample_values, sample_labels, sample_errors, })

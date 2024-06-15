@@ -1,7 +1,7 @@
 use cluster::math::Vector;
 use cluster::math::Matrix;
 
-use cluster::model::init::ModelInit;
+use cluster::model::init::ClusterInit;
 use cluster::model::gaussian_mixture::GaussianMixture;
 
 use rand::prelude::*;
@@ -35,7 +35,7 @@ impl GaussianMixtureClusterer {
         let gaussian_mixture = GaussianMixture::new(samples.len(), cluster_count);
 
         let sample_values = samples;
-        let (cluster_weights, cluster_means, cluster_covariances) = gaussian_mixture.init(&sample_values, ModelInit::KMeanPlusPlus, &mut thread_rng());
+        let (cluster_weights, cluster_means, cluster_covariances) = gaussian_mixture.init(&sample_values, ClusterInit::KMeanPlusPlus, &mut thread_rng());
         let (priors, likelihoods, marginal_likelihoods, posteriors) = gaussian_mixture.e_step(&sample_values, &cluster_weights, &cluster_means, &cluster_covariances);
 
         Box::new(Self {
