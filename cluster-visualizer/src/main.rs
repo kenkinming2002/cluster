@@ -33,6 +33,7 @@ pub fn main() {
     eprintln!("  Press g for gaussian mixture model.");
     eprintln!("  Press a for agglomerative single linkage model.");
     eprintln!("  Press p for affinity propagation");
+    eprintln!("  Press t to to start/stop stepping through the algorithm automatically");
     eprintln!("  Press s to step through the algorithm.");
 
     let sdl_context = sdl2::init().unwrap();
@@ -46,35 +47,42 @@ pub fn main() {
         .build().unwrap();
 
     let mut clusterer = NoneClusterer::new(random_samples()) as Box<dyn Clusterer>;
+    let mut running = false;
     loop {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
         canvas.clear();
         clusterer.render(Render::new(&mut canvas));
         canvas.present();
 
-        let event = event_pump.wait_event();
-        event_pump.disable_event(EventType::KeyDown); // Prevent events from piling up if computation takes a long time
-        match event {
-            // New clusterer with new samples
-            Event::KeyDown { keycode : Some(Keycode::R), .. } => clusterer = NoneClusterer::new(random_samples()),
-            Event::KeyDown { keycode : Some(Keycode::Kp1), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::RG)),
-            Event::KeyDown { keycode : Some(Keycode::Kp2), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::RB)),
-            Event::KeyDown { keycode : Some(Keycode::Kp3), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::GB)),
+        if let Some(event) = if running { event_pump.poll_event() } else { Some(event_pump.wait_event()) } {
+            event_pump.disable_event(EventType::KeyDown); // Prevent events from piling up if computation takes a long time
+            match event {
+                // New clusterer with new samples
+                Event::KeyDown { keycode : Some(Keycode::R), .. } => clusterer = NoneClusterer::new(random_samples()),
+                Event::KeyDown { keycode : Some(Keycode::Kp1), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::RG)),
+                Event::KeyDown { keycode : Some(Keycode::Kp2), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::RB)),
+                Event::KeyDown { keycode : Some(Keycode::Kp3), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::GB)),
 
-            // Change Clusterer but keep samples
-            Event::KeyDown { keycode : Some(Keycode::K), .. } => clusterer = KMeansClusterer::new(clusterer.into_raw(), 10),
-            Event::KeyDown { keycode : Some(Keycode::G), .. } => clusterer = GaussianMixtureClusterer::new(clusterer.into_raw(), 10),
-            Event::KeyDown { keycode : Some(Keycode::A), .. } => clusterer = AgglomerativeSingleLinkageClusterer::new(clusterer.into_raw(), 10),
-            Event::KeyDown { keycode : Some(Keycode::P), .. } => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.5, 0.7),
+                // Change Clusterer but keep samples
+                Event::KeyDown { keycode : Some(Keycode::K), .. } => clusterer = KMeansClusterer::new(clusterer.into_raw(), 10),
+                Event::KeyDown { keycode : Some(Keycode::G), .. } => clusterer = GaussianMixtureClusterer::new(clusterer.into_raw(), 10),
+                Event::KeyDown { keycode : Some(Keycode::A), .. } => clusterer = AgglomerativeSingleLinkageClusterer::new(clusterer.into_raw(), 10),
+                Event::KeyDown { keycode : Some(Keycode::P), .. } => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.5, 0.7),
 
-            // Update Clusterer
-            Event::KeyDown { keycode : Some(Keycode::S), .. } => clusterer.update(),
+                // Update Clusterer
+                Event::KeyDown { keycode : Some(Keycode::T), .. } => running = !running,
+                Event::KeyDown { keycode : Some(Keycode::S), .. } => clusterer.update(),
 
-            // Misc
-            Event::Quit {..} => break,
-            _ => {},
+                // Misc
+                Event::Quit {..} => break,
+                _ => {},
+            }
+            event_pump.enable_event(EventType::KeyDown);
         }
-        event_pump.enable_event(EventType::KeyDown);
+
+        if running {
+            clusterer.update();
+        }
     }
 }
 
