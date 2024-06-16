@@ -15,7 +15,7 @@ pub fn choose_file() -> PathBuf {
         .stdout;
 
     let path = path.strip_suffix(b"\n").unwrap();
-    let path = OsStr::from_bytes(&path);
+    let path = OsStr::from_bytes(path);
     let path = Path::new(&path);
     path.to_path_buf()
 }

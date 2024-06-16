@@ -50,8 +50,8 @@ pub fn random_samples() -> Vec<Vector<2>> {
         let dist_y = Normal::<f64>::new(mean_y, var_y).unwrap();
 
         for _ in 0..SAMPLE_CLUSTER_SIZE {
-            let x = dist_x.sample(&mut rng).max(0.05).min(0.95);
-            let y = dist_y.sample(&mut rng).max(0.05).min(0.95);
+            let x = dist_x.sample(&mut rng).clamp(0.05, 0.95);
+            let y = dist_y.sample(&mut rng).clamp(0.05, 0.95);
             samples.push(Vector::from_array([x, y]));
         }
     }

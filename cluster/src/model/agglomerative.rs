@@ -20,7 +20,7 @@ impl Eq for Edge {}
 
 impl PartialOrd for Edge {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.distance.partial_cmp(&other.distance)?.reverse())
+        Some(self.cmp(other))
     }
 }
 
