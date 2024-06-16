@@ -1,4 +1,4 @@
-use crate::utils::disjoint_set::DisjointSet;
+use crate::disjoint_set::DisjointSet;
 
 use math::prelude::*;
 use std::collections::BinaryHeap;

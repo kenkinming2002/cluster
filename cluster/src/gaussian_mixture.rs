@@ -1,4 +1,4 @@
-use crate::model::init::ClusterInit;
+use crate::init::ClusterInit;
 
 use math::prelude::*;
 use rand::prelude::*;

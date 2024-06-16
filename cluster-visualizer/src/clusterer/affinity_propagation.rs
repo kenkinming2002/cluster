@@ -1,7 +1,7 @@
 use super::Render;
 use super::Clusterer;
 
-use cluster::model::affinity_propagation::AffinityPropagation;
+use cluster::affinity_propagation::AffinityPropagation;
 
 use math::prelude::*;
 

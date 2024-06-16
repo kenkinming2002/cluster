@@ -1,7 +1,7 @@
 use super::Render;
 use super::Clusterer;
 
-use cluster::model::agglomerative_single_linkage::agglomerative_single_linkage;
+use cluster::agglomerative_single_linkage::agglomerative_single_linkage;
 
 use math::prelude::*;
 

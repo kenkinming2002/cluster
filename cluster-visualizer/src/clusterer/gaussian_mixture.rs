@@ -1,8 +1,8 @@
 use super::Render;
 use super::Clusterer;
 
-use cluster::model::init::ClusterInit;
-use cluster::model::gaussian_mixture::GaussianMixture;
+use cluster::init::ClusterInit;
+use cluster::gaussian_mixture::GaussianMixture;
 
 use math::prelude::*;
 use rand::prelude::*;
