@@ -1,8 +1,9 @@
 use posterize::PosterizeMethod;
-use posterize::Vector;
 
 use image::io::Reader as ImageReader;
 use image::Rgb;
+
+use math::prelude::*;
 
 use anyhow::Result;
 use anyhow::Context;

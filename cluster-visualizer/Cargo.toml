@@ -7,6 +7,7 @@ edition = "2021"
 cluster = { version = "0.1.0", path = "../cluster" }
 image = "0.25.1"
 itertools = "0.13.0"
+math = { version = "0.1.0", path = "../math" }
 rand = "0.8.5"
 rand_distr = "0.4.3"
 sdl2 = "0.36.0"

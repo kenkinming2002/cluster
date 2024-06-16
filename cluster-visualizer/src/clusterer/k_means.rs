@@ -1,12 +1,11 @@
-use cluster::math::Vector;
+use super::Render;
+use super::Clusterer;
+
 use cluster::model::init::ClusterInit;
 use cluster::model::k_means::KMeans;
 
+use math::prelude::*;
 use rand::prelude::*;
-
-use crate::render::Render;
-
-use super::Clusterer;
 
 fn lerp(a : f64, low : f64, high : f64) -> f64 {
     low + a * (high - low)

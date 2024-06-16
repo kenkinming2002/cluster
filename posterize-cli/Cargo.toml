@@ -7,4 +7,5 @@ edition = "2021"
 anyhow = "1.0.86"
 clap = { version = "4.5.7", features = ["derive"] }
 image = "0.25.1"
+math = { version = "0.1.0", path = "../math" }
 posterize = { version = "0.1.0", path = "../posterize" }

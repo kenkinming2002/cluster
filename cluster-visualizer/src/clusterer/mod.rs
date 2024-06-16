@@ -12,9 +12,9 @@ pub use agglomerative_single_linkage::AgglomerativeSingleLinkageClusterer;
 pub use affinity_propagation::AffinityPropagationClusterer;
 pub use dbscan::DbscanClusterer;
 
-use cluster::math::Vector;
-
 use crate::render::Render;
+
+use math::prelude::*;
 
 pub trait Clusterer {
     /// Convert clusterer into its internal state.

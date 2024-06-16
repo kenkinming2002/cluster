@@ -1,6 +1,6 @@
-use crate::utils::array_zip::ArrayZip;
-use crate::utils::permutation::Parity;
-use crate::utils::permutation::Permutations;
+use crate::array_zip::ArrayZip;
+use crate::permutation::Parity;
+use crate::permutation::Permutations;
 
 use std::ops::Index;
 use std::ops::IndexMut;
@@ -178,7 +178,7 @@ impl<const N: usize> std::fmt::Display for Matrix<N> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::InnerProduct;
+    use crate::prelude::*;
 
     use rand::prelude::*;
 

@@ -1,6 +1,4 @@
-use super::Vector;
-use super::Matrix;
-use super::InnerProduct;
+use crate::prelude::*;
 
 pub struct MultivariateGaussian<const N: usize> {
     mean : Vector<N>,

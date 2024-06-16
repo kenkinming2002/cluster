@@ -300,6 +300,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "itertools 0.13.0",
+ "math",
  "rand",
 ]
 
@@ -310,6 +311,7 @@ dependencies = [
  "cluster",
  "image",
  "itertools 0.13.0",
+ "math",
  "rand",
  "rand_distr",
  "sdl2",
@@ -700,6 +702,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "math"
+version = "0.1.0"
+dependencies = [
+ "rand",
+]
+
+[[package]]
 name = "maybe-rayon"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -841,6 +850,7 @@ version = "0.1.0"
 dependencies = [
  "clap",
  "cluster",
+ "math",
  "rand",
 ]
 
@@ -851,6 +861,7 @@ dependencies = [
  "anyhow",
  "clap",
  "image",
+ "math",
  "posterize",
 ]
 
@@ -858,8 +869,8 @@ dependencies = [
 name = "posterize-frei0r"
 version = "0.1.0"
 dependencies = [
- "cluster",
  "frei0r-rs",
+ "math",
  "posterize",
 ]
 

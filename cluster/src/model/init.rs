@@ -1,7 +1,8 @@
-use crate::math::Vector;
 use crate::utils::slice_random_ext::SliceRandomExt;
 
+use math::prelude::*;
 use rand::prelude::*;
+
 use clap::ValueEnum;
 
 #[derive(Debug, Copy, Clone, ValueEnum)]

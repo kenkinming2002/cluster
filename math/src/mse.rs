@@ -1,5 +1,4 @@
-use super::Vector;
-use super::Matrix;
+use crate::prelude::*;
 
 trait Mse: Sized {
     fn mse<I>(iter: I) -> f64

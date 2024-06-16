@@ -1,12 +1,13 @@
 //! This crate implement image posterization using various(i.e. 2) clustering algorithms.
 
-pub use cluster::math::Vector;
 pub use cluster::model::init::ClusterInit;
 
 use cluster::model::k_means::*;
 use cluster::model::gaussian_mixture::*;
 
+use math::prelude::*;
 use rand::prelude::*;
+
 use clap::Subcommand;
 use std::num::NonZero;
 

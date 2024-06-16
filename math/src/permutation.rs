@@ -71,3 +71,4 @@ mod tests {
         assert_eq!(permutations.next(), None);
     }
 }
+

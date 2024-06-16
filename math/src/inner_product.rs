@@ -1,5 +1,4 @@
-use super::Matrix;
-use super::Vector;
+use crate::prelude::*;
 
 pub trait InnerProduct<Rhs> {
     type Output;

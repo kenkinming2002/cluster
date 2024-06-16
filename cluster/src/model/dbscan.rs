@@ -1,4 +1,4 @@
-use crate::math::Vector;
+use math::prelude::*;
 
 fn neighbours<const N: usize>(samples : &[Vector<N>], epsilon : f64, index : usize) -> Vec<usize> {
     let mut result = Vec::new();

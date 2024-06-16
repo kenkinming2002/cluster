@@ -1,9 +1,10 @@
-use cluster::math::Vector;
+use super::Render;
+use super::Clusterer;
+
 use cluster::model::affinity_propagation::AffinityPropagation;
 
-use crate::render::Render;
+use math::prelude::*;
 
-use super::Clusterer;
 
 fn lerp(a : f64, low : f64, high : f64) -> f64 {
     low + a * (high - low)

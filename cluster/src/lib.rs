@@ -13,6 +13,5 @@
 extern crate test;
 
 pub mod utils;
-pub mod math;
 pub mod model;
 

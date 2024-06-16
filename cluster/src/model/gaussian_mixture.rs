@@ -1,10 +1,6 @@
-use crate::math::Vector;
-use crate::math::Matrix;
-use crate::math::OuterProduct;
-use crate::math::MseIteratorExt;
-use crate::math::MultivariateGaussian;
 use crate::model::init::ClusterInit;
 
+use math::prelude::*;
 use rand::prelude::*;
 
 /// Implementation of Gaussian mixture model Clustering algorithm.

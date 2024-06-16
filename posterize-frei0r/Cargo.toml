@@ -7,6 +7,6 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-cluster = { version = "0.1.0", path = "../cluster" }
 frei0r-rs = { git = "https://gitlab.com/kwokkinming/frei0r-rs.git", version = "0.1.0" }
+math = { version = "0.1.0", path = "../math" }
 posterize = { version = "0.1.0", path = "../posterize" }

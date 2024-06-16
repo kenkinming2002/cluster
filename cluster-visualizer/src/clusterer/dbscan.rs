@@ -1,10 +1,9 @@
-use cluster::math::Vector;
+use super::Render;
+use super::Clusterer;
 
 use cluster::model::dbscan::dbscan;
 
-use crate::render::Render;
-
-use super::Clusterer;
+use math::prelude::*;
 
 fn lerp(a : f64, low : f64, high : f64) -> f64 {
     low + a * (high - low)

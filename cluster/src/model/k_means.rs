@@ -1,6 +1,6 @@
-use crate::math::Vector;
 use crate::model::init::ClusterInit;
 
+use math::prelude::Vector;
 use rand::prelude::*;
 
 /// Implementation of K-Means Clustering algorithm.

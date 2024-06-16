@@ -1,6 +1,6 @@
-use crate::math::Vector;
 use crate::utils::disjoint_set::DisjointSet;
 
+use math::prelude::*;
 use std::collections::BinaryHeap;
 
 #[derive(Debug, Copy, Clone)]

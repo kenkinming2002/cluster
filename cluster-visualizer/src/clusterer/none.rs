@@ -1,6 +1,7 @@
-use cluster::math::Vector;
+use super::Render;
 use super::Clusterer;
-use crate::render::Render;
+
+use math::prelude::*;
 
 pub struct NoneClusterer {
     samples : Vec<Vector<2>>,

@@ -1,7 +1,7 @@
 use posterize::PosterizeMethod;
 use posterize::ClusterInit;
-use posterize::Vector;
 
+use math::prelude::*;
 use frei0r_rs::*;
 
 use std::num::NonZero;

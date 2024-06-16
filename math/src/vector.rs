@@ -1,6 +1,5 @@
-use crate::utils::array_zip::ArrayZip;
-
-use super::inner_product::InnerProduct as _;
+use crate::array_zip::ArrayZip;
+use crate::prelude::*;
 
 use std::ops::Index;
 use std::ops::IndexMut;
