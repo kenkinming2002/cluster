@@ -1,6 +1,6 @@
 use cluster::math::Vector;
 
-use cluster::model::agglomerative::agglomerative_single_linkage;
+use cluster::model::agglomerative_single_linkage::agglomerative_single_linkage;
 
 use crate::render::Render;
 
