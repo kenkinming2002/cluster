@@ -5,12 +5,16 @@ pub mod agglomerative_single_linkage;
 pub mod affinity_propagation;
 pub mod dbscan;
 
+pub mod slink;
+
 pub use none::NoneClusterer;
 pub use k_means::KMeansClusterer;
 pub use gaussian_mixture::GaussianMixtureClusterer;
 pub use agglomerative_single_linkage::AgglomerativeSingleLinkageClusterer;
 pub use affinity_propagation::AffinityPropagationClusterer;
 pub use dbscan::DbscanClusterer;
+
+pub use slink::SlinkClusterer;
 
 use crate::render::Render;
 

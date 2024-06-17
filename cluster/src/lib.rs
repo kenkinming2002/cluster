@@ -10,5 +10,8 @@ pub mod agglomerative_single_linkage;
 pub mod affinity_propagation;
 pub mod dbscan;
 
+pub mod dendrogram;
+pub mod slink;
+
 mod slice_random_ext;
 mod disjoint_set;

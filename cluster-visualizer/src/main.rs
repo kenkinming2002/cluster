@@ -16,6 +16,7 @@ use clusterer::GaussianMixtureClusterer;
 use clusterer::AgglomerativeSingleLinkageClusterer;
 use clusterer::AffinityPropagationClusterer;
 use clusterer::DbscanClusterer;
+use clusterer::SlinkClusterer;
 
 use sdl2::event::Event;
 use sdl2::event::EventType;
@@ -71,6 +72,7 @@ pub fn main() {
                 Event::KeyDown { keycode : Some(Keycode::A), .. } => clusterer = AgglomerativeSingleLinkageClusterer::new(clusterer.into_raw(), 10),
                 Event::KeyDown { keycode : Some(Keycode::P), .. } => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.1, 0.7),
                 Event::KeyDown { keycode : Some(Keycode::D), .. } => clusterer = DbscanClusterer::new(clusterer.into_raw(), 0.03, 8),
+                Event::KeyDown { keycode : Some(Keycode::L), .. } => clusterer = SlinkClusterer::new(clusterer.into_raw(), 10),
 
                 // Update Clusterer
                 Event::KeyDown { keycode : Some(Keycode::T), .. } => running = !running,
