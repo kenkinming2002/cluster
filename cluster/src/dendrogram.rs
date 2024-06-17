@@ -13,6 +13,12 @@ pub struct Dendrogram {
     merge_targets : Vec<usize>,
 }
 
+/// A section of a dendrogram.
+pub struct DendrogramSection {
+    pub edges : Vec<(usize, usize)>,
+    pub labels : Vec<usize>,
+}
+
 impl Dendrogram {
     /// Constructor.
     pub fn new(merge_heights : Vec<f64>, merge_targets : Vec<usize>) -> Self {
@@ -36,32 +42,39 @@ impl Dendrogram {
         self.merge_heights.len()
     }
 
-    /// Return clusters represented as labels at ```height```.
-    pub fn with_height(&self, height : f64) -> Vec<usize> {
+    /// Return section at ```height```.
+    pub fn section_with_height(&self, height : f64) -> DendrogramSection {
         let mut disjoint_set = DisjointSet::new(self.len());
-        for (item, (&merge_height, &merge_target)) in std::iter::zip(&self.merge_heights, &self.merge_targets).enumerate() {
-            if merge_height <= height {
-                disjoint_set.merge(item, merge_target);
-            }
+        let mut edges = Vec::new();
+        for (index1, index2) in std::iter::zip(&self.merge_heights, &self.merge_targets)
+            .enumerate()
+            .filter(|(_, (&merge_height, _))| merge_height <= height)
+            .map(|(item, (_, &merge_target))| (item, merge_target))
+        {
+            edges.push((index1, index2));
+            disjoint_set.merge(index1, index2);
         }
-        disjoint_set.connceted_component_labels()
+        let labels = disjoint_set.connceted_component_labels();
+        DendrogramSection { edges, labels, }
     }
 
-    /// Return clusters represented as labels when after repeated merging, number of cluster
-    /// becomes less than or equal to ```cluster_count```.
-    pub fn with_cluster_count(&self, cluster_count : usize) -> Vec<usize> {
+    /// Return lowest section where number of cluster is ```cluster_count```.
+    pub fn section_with_cluster_count(&self, cluster_count : usize) -> DendrogramSection {
         let mut disjoint_set = DisjointSet::new(self.len());
+        let mut edges = Vec::new();
         for (index1, index2) in std::iter::zip(&self.merge_heights, &self.merge_targets)
             .enumerate()
             .sorted_by(|(_, (merge_height1, _)), (_, (merge_height2, _))| f64::partial_cmp(merge_height1, merge_height2).unwrap())
             .map(|(item, (_, &merge_target))| (item, merge_target))
         {
+            edges.push((index1, index2));
             disjoint_set.merge(index1, index2);
             if disjoint_set.connected_component_count() <= cluster_count {
                 break
             }
         }
-        disjoint_set.connceted_component_labels()
+        let labels = disjoint_set.connceted_component_labels();
+        DendrogramSection { edges, labels, }
     }
 }
 
