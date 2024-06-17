@@ -68,11 +68,11 @@ pub fn main() {
                 Event::KeyDown { keycode : Some(Keycode::Kp3), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::GB)),
 
                 // Change Clusterer but keep samples
-                Event::KeyDown { keymod : Mod::LCTRLMOD | Mod::RCTRLMOD, keycode : Some(Keycode::K), .. } => clusterer = KMeansClusterer::new(clusterer.into_raw(), 10),
-                Event::KeyDown { keymod : Mod::LCTRLMOD | Mod::RCTRLMOD, keycode : Some(Keycode::G), .. } => clusterer = GaussianMixtureClusterer::new(clusterer.into_raw(), 10),
-                Event::KeyDown { keymod : Mod::LCTRLMOD | Mod::RCTRLMOD, keycode : Some(Keycode::A), .. } => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.1, 0.7),
-                Event::KeyDown { keymod : Mod::LCTRLMOD | Mod::RCTRLMOD, keycode : Some(Keycode::D), .. } => clusterer = DbscanClusterer::new(clusterer.into_raw(), 0.03, 8),
-                Event::KeyDown { keymod : Mod::LCTRLMOD | Mod::RCTRLMOD, keycode : Some(Keycode::S), .. } => clusterer = SlinkClusterer::new(clusterer.into_raw(), 10),
+                Event::KeyDown { keymod, keycode : Some(Keycode::K), .. } if keymod.contains(Mod::LCTRLMOD) || keymod.contains(Mod::RCTRLMOD) => clusterer = KMeansClusterer::new(clusterer.into_raw(), 10),
+                Event::KeyDown { keymod, keycode : Some(Keycode::G), .. } if keymod.contains(Mod::LCTRLMOD) || keymod.contains(Mod::RCTRLMOD) => clusterer = GaussianMixtureClusterer::new(clusterer.into_raw(), 10),
+                Event::KeyDown { keymod, keycode : Some(Keycode::A), .. } if keymod.contains(Mod::LCTRLMOD) || keymod.contains(Mod::RCTRLMOD) => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.1, 0.7),
+                Event::KeyDown { keymod, keycode : Some(Keycode::D), .. } if keymod.contains(Mod::LCTRLMOD) || keymod.contains(Mod::RCTRLMOD) => clusterer = DbscanClusterer::new(clusterer.into_raw(), 0.03, 8),
+                Event::KeyDown { keymod, keycode : Some(Keycode::S), .. } if keymod.contains(Mod::LCTRLMOD) || keymod.contains(Mod::RCTRLMOD) => clusterer = SlinkClusterer::new(clusterer.into_raw(), 10),
 
                 // Update Clusterer
                 Event::KeyDown { keycode : Some(Keycode::T), .. } => running = !running,
