@@ -20,6 +20,7 @@ use clusterer::SlinkClusterer;
 use sdl2::event::Event;
 use sdl2::event::EventType;
 use sdl2::keyboard::Keycode;
+use sdl2::keyboard::Mod;
 use sdl2::pixels::Color;
 
 pub fn main() {
@@ -30,11 +31,12 @@ pub fn main() {
     eprintln!("  Press numpad 2 to load samples from RB plane of image.");
     eprintln!("  Press numpad 3 to load samples from GB plane of image.");
 
-    eprintln!("  Press k for k-means clustering.");
-    eprintln!("  Press g for gaussian mixture model.");
-    eprintln!("  Press a for agglomerative single linkage model.");
-    eprintln!("  Press p for affinity propagation");
-    eprintln!("  Press d for dbscan(Density-based spatial clustering of applications with noise)");
+    eprintln!("  Press C-k for k-means clustering.");
+    eprintln!("  Press C-g for gaussian mixture model.");
+    eprintln!("  Press C-p for affinity propagation");
+    eprintln!("  Press C-d for dbscan(Density-based spatial clustering of applications with noise)");
+    eprintln!("  Press C-s for single linkage clustering.");
+
     eprintln!("  Press t to to start/stop stepping through the algorithm automatically");
     eprintln!("  Press s to step through the algorithm.");
 
@@ -66,11 +68,11 @@ pub fn main() {
                 Event::KeyDown { keycode : Some(Keycode::Kp3), .. } => clusterer = NoneClusterer::new(image_samples(ImagePlane::GB)),
 
                 // Change Clusterer but keep samples
-                Event::KeyDown { keycode : Some(Keycode::K), .. } => clusterer = KMeansClusterer::new(clusterer.into_raw(), 10),
-                Event::KeyDown { keycode : Some(Keycode::G), .. } => clusterer = GaussianMixtureClusterer::new(clusterer.into_raw(), 10),
-                Event::KeyDown { keycode : Some(Keycode::P), .. } => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.1, 0.7),
-                Event::KeyDown { keycode : Some(Keycode::D), .. } => clusterer = DbscanClusterer::new(clusterer.into_raw(), 0.03, 8),
-                Event::KeyDown { keycode : Some(Keycode::L), .. } => clusterer = SlinkClusterer::new(clusterer.into_raw(), 10),
+                Event::KeyDown { keymod : Mod::LCTRLMOD | Mod::RCTRLMOD, keycode : Some(Keycode::K), .. } => clusterer = KMeansClusterer::new(clusterer.into_raw(), 10),
+                Event::KeyDown { keymod : Mod::LCTRLMOD | Mod::RCTRLMOD, keycode : Some(Keycode::G), .. } => clusterer = GaussianMixtureClusterer::new(clusterer.into_raw(), 10),
+                Event::KeyDown { keymod : Mod::LCTRLMOD | Mod::RCTRLMOD, keycode : Some(Keycode::A), .. } => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.1, 0.7),
+                Event::KeyDown { keymod : Mod::LCTRLMOD | Mod::RCTRLMOD, keycode : Some(Keycode::D), .. } => clusterer = DbscanClusterer::new(clusterer.into_raw(), 0.03, 8),
+                Event::KeyDown { keymod : Mod::LCTRLMOD | Mod::RCTRLMOD, keycode : Some(Keycode::S), .. } => clusterer = SlinkClusterer::new(clusterer.into_raw(), 10),
 
                 // Update Clusterer
                 Event::KeyDown { keycode : Some(Keycode::T), .. } => running = !running,
