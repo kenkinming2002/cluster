@@ -1,15 +1,12 @@
 use super::Render;
 use super::Clusterer;
+use super::pick_color;
 
 use cluster::expectation_maximization::init::ClusterInit;
 use cluster::expectation_maximization::k_means::KMeans;
 
 use math::prelude::*;
 use rand::prelude::*;
-
-fn lerp(a : f64, low : f64, high : f64) -> f64 {
-    low + a * (high - low)
-}
 
 pub struct KMeansClusterer {
     k_means : KMeans<2>,
@@ -49,17 +46,13 @@ impl Clusterer for KMeansClusterer {
 
     fn render(&self, mut render : Render<'_>) {
         for (sample_value, sample_label) in std::iter::zip(&self.sample_values, &self.sample_labels) {
-            let r = lerp(*sample_label as f64 / self.k_means.cluster_count as f64, 32.0, 224.0) as u8;
-            let g = lerp(*sample_label as f64 / self.k_means.cluster_count as f64, 224.0, 32.0) as u8;
-            let b = lerp(*sample_label as f64 / self.k_means.cluster_count as f64, 64.0, 196.0) as u8;
+            let ratio = *sample_label as f64 / self.k_means.cluster_count as f64;
+            let (r, g, b) = pick_color(ratio);
             render.draw_point(r, g, b, sample_value[0], sample_value[1], 5.0);
         }
 
         for cluster_mean in &self.cluster_means {
-            let r = 0;
-            let g = 0;
-            let b = 255;
-            render.draw_point(r, g, b, cluster_mean[0], cluster_mean[1], 10.0);
+            render.draw_point(255, 255, 255, cluster_mean[0], cluster_mean[1], 10.0);
         }
     }
 }

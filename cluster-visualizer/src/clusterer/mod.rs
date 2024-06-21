@@ -86,3 +86,33 @@ pub fn image_samples(plane : ImagePlane) -> Vec<Vector<2>> {
         ImagePlane::GB => Vector::from_array([ pixel.0[1] as f64, pixel.0[2] as f64, ]),
     }).collect()
 }
+
+pub fn pick_color(value : f64) -> (u8, u8, u8) {
+    let h = value * 6.0;
+    let s = 1.0;
+    let v = 1.0;
+
+    let c = s * v;
+    let x = c * (1.0 - (h.rem_euclid(2.0) - 1.0).abs());
+
+    let (r1, g1, b1) = if h <= 1.0 {
+        (c, x, 0.0)
+    } else if h <= 2.0 {
+        (x, c, 0.0)
+    } else if h <= 3.0 {
+        (0.0, c, x)
+    } else if h <= 4.0 {
+        (0.0, x, c)
+    } else if h <= 5.0 {
+        (x, 0.0, c)
+    } else {
+        (c, 0.0, x)
+    };
+
+    let m = v - c;
+    let r = r1 + m;
+    let g = g1 + m;
+    let b = b1 + m;
+
+    ((r * 255.0) as u8, (g * 255.0) as u8, (b * 255.0) as u8)
+}

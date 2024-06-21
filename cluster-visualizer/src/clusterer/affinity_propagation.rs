@@ -1,14 +1,10 @@
 use super::Render;
 use super::Clusterer;
+use super::pick_color;
 
 use cluster::misc::affinity_propagation::AffinityPropagation;
 
 use math::prelude::*;
-
-
-fn lerp(a : f64, low : f64, high : f64) -> f64 {
-    low + a * (high - low)
-}
 
 pub struct AffinityPropagationClusterer {
     affinity_propagation : AffinityPropagation,
@@ -59,14 +55,13 @@ impl Clusterer for AffinityPropagationClusterer {
             if let Some(&exempler_index) = self.exemplers.get(sample_label) {
                 if sample_index == exempler_index {
                     // Exempler
-                    render.draw_point(0, 0, 255, sample_value[0], sample_value[1], 10.0);
+                    render.draw_point(255, 0, 0, sample_value[0], sample_value[1], 10.0);
                 } else {
                     // Other point
                     let ratio = if !self.exemplers.is_empty() { sample_label as f64 / self.exemplers.len() as f64 } else { 0.0 };
-                    let r = lerp(ratio, 0.0, 255.0) as u8;
-                    let g = lerp(ratio, 255.0, 0.0) as u8;
-                    render.draw_line(r, g, 0, sample_value[0], sample_value[1], self.sample_values[exempler_index][0], self.sample_values[exempler_index][1]);
-                    render.draw_point(r, g, 0, sample_value[0], sample_value[1], 5.0);
+                    let (r, g, b) = pick_color(ratio);
+                    render.draw_line(r, g, b, sample_value[0], sample_value[1], self.sample_values[exempler_index][0], self.sample_values[exempler_index][1]);
+                    render.draw_point(r, g, b, sample_value[0], sample_value[1], 5.0);
                 }
             } else {
                 // This mean we do not actually have any exemplers yet, and the labels are dummy

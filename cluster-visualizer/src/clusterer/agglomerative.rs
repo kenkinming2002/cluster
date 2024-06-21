@@ -1,5 +1,6 @@
 use super::Render;
 use super::Clusterer;
+use super::pick_color;
 
 use cluster::hierarchical::agglomerative::naive::naive;
 use cluster::hierarchical::agglomerative::naive::single_linkage;
@@ -7,10 +8,6 @@ use cluster::hierarchical::agglomerative::naive::complete_linkage;
 use cluster::hierarchical::agglomerative::naive::average_linkage;
 
 use math::prelude::*;
-
-fn lerp(a : f64, low : f64, high : f64) -> f64 {
-    low + a * (high - low)
-}
 
 pub struct AgglomerativeClusterer {
     samples : Vec<Vector<2>>,
@@ -45,9 +42,7 @@ impl Clusterer for AgglomerativeClusterer {
         let cluster_count = self.clusters.len();
         for (cluster_index, cluster) in self.clusters.iter().enumerate() {
             let ratio = cluster_index as f64 / cluster_count as f64;
-            let r = lerp(ratio, 0.0, 256.0) as u8;
-            let g = lerp(ratio, 256.0, 0.0) as u8;
-            let b = lerp(ratio, 0.0, 256.0) as u8;
+            let (r, g, b) = pick_color(ratio);
             for &sample_index in cluster {
                 render.draw_point(r, g, b, self.samples[sample_index][0], self.samples[sample_index][1], 5.0);
             }
