@@ -1,4 +1,4 @@
-use crate::dendrogram::Dendrogram;
+use super::dendrogram::Dendrogram;
 
 /// Implementation of SLINK algorithm for single-linkage clustering.
 ///

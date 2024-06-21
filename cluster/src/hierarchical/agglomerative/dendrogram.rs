@@ -1,4 +1,4 @@
-use crate::disjoint_set::DisjointSet;
+use super::disjoint_set::DisjointSet;
 
 use itertools::Itertools;
 

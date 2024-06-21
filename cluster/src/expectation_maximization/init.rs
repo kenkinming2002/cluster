@@ -1,4 +1,4 @@
-use crate::slice_random_ext::SliceRandomExt;
+use super::slice_random_ext::SliceRandomExt;
 
 use math::prelude::*;
 use rand::prelude::*;

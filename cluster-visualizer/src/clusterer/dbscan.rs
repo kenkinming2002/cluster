@@ -1,7 +1,7 @@
 use super::Render;
 use super::Clusterer;
 
-use cluster::dbscan::dbscan;
+use cluster::misc::dbscan::dbscan;
 
 use math::prelude::*;
 

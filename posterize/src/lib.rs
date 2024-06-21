@@ -1,9 +1,9 @@
 //! This crate implement image posterization using various(i.e. 2) clustering algorithms.
 
-pub use cluster::init::ClusterInit;
+pub use cluster::expectation_maximization::init::ClusterInit;
 
-use cluster::k_means::*;
-use cluster::gaussian_mixture::*;
+use cluster::expectation_maximization::k_means::*;
+use cluster::expectation_maximization::gaussian_mixture::*;
 
 use math::prelude::*;
 use rand::prelude::*;

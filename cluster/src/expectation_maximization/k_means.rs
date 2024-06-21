@@ -1,4 +1,4 @@
-use crate::init::ClusterInit;
+use super::init::ClusterInit;
 
 use math::prelude::Vector;
 use rand::prelude::*;

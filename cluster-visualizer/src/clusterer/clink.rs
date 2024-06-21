@@ -1,8 +1,8 @@
 use super::Render;
 use super::Clusterer;
 
-use cluster::dendrogram::DendrogramSection;
-use cluster::clink::clink;
+use cluster::hierarchical::agglomerative::dendrogram::DendrogramSection;
+use cluster::hierarchical::agglomerative::clink::clink;
 
 use math::prelude::*;
 

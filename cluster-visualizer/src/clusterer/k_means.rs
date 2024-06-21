@@ -1,8 +1,8 @@
 use super::Render;
 use super::Clusterer;
 
-use cluster::init::ClusterInit;
-use cluster::k_means::KMeans;
+use cluster::expectation_maximization::init::ClusterInit;
+use cluster::expectation_maximization::k_means::KMeans;
 
 use math::prelude::*;
 use rand::prelude::*;
