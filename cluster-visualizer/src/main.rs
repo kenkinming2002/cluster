@@ -16,6 +16,7 @@ use clusterer::GaussianMixtureClusterer;
 use clusterer::AffinityPropagationClusterer;
 use clusterer::DbscanClusterer;
 use clusterer::SlinkClusterer;
+use clusterer::ClinkClusterer;
 
 use sdl2::event::Event;
 use sdl2::event::EventType;
@@ -73,6 +74,7 @@ pub fn main() {
                 Event::KeyDown { keymod, keycode : Some(Keycode::A), .. } if keymod.contains(Mod::LCTRLMOD) || keymod.contains(Mod::RCTRLMOD) => clusterer = AffinityPropagationClusterer::new(clusterer.into_raw(), -0.1, 0.7),
                 Event::KeyDown { keymod, keycode : Some(Keycode::D), .. } if keymod.contains(Mod::LCTRLMOD) || keymod.contains(Mod::RCTRLMOD) => clusterer = DbscanClusterer::new(clusterer.into_raw(), 0.03, 8),
                 Event::KeyDown { keymod, keycode : Some(Keycode::S), .. } if keymod.contains(Mod::LCTRLMOD) || keymod.contains(Mod::RCTRLMOD) => clusterer = SlinkClusterer::new(clusterer.into_raw(), 10),
+                Event::KeyDown { keymod, keycode : Some(Keycode::C), .. } if keymod.contains(Mod::LCTRLMOD) || keymod.contains(Mod::RCTRLMOD) => clusterer = ClinkClusterer::new(clusterer.into_raw(), 10),
 
                 // Update Clusterer
                 Event::KeyDown { keycode : Some(Keycode::T), .. } => running = !running,

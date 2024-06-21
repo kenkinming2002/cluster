@@ -5,6 +5,7 @@ pub mod affinity_propagation;
 pub mod dbscan;
 
 pub mod slink;
+pub mod clink;
 
 pub use none::NoneClusterer;
 pub use k_means::KMeansClusterer;
@@ -13,6 +14,7 @@ pub use affinity_propagation::AffinityPropagationClusterer;
 pub use dbscan::DbscanClusterer;
 
 pub use slink::SlinkClusterer;
+pub use clink::ClinkClusterer;
 
 use crate::render::Render;
 

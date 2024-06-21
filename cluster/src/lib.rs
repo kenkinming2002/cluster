@@ -11,6 +11,7 @@ pub mod dbscan;
 
 pub mod dendrogram;
 pub mod slink;
+pub mod clink;
 
 mod slice_random_ext;
 mod disjoint_set;
