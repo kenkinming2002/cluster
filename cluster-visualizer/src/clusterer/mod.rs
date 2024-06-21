@@ -6,6 +6,7 @@ pub mod dbscan;
 
 pub mod slink;
 pub mod clink;
+pub mod agglomerative;
 
 pub use none::NoneClusterer;
 pub use k_means::KMeansClusterer;
@@ -15,6 +16,7 @@ pub use dbscan::DbscanClusterer;
 
 pub use slink::SlinkClusterer;
 pub use clink::ClinkClusterer;
+pub use agglomerative::AgglomerativeClusterer;
 
 use crate::render::Render;
 

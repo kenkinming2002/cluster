@@ -1,4 +1,5 @@
 pub mod dendrogram;
+pub mod naive;
 pub mod clink;
 pub mod slink;
 
