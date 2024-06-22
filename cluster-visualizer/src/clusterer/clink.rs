@@ -15,7 +15,7 @@ pub struct ClinkClusterer {
 
 impl ClinkClusterer {
     pub fn new(samples : Vec<Vector<2>>, cluster_count : usize) -> Box<Self> {
-        let dendrogram = clink(&samples, |&sample1, &sample2| (sample1 - sample2).squared_length());
+        let dendrogram = clink(&samples, |&sample1, &sample2| (sample1 - sample2).length());
         let dendrogram_section = dendrogram.section_with_cluster_count(cluster_count);
         Box::new(Self { cluster_count, samples, dendrogram_section, })
     }

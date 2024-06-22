@@ -8,53 +8,82 @@ pub fn clink<T, D>(samples : &[T], mut dissimilarity: D) -> Dendrogram
 where
     D: FnMut(&T, &T) -> f64
 {
-    let mut merge_heights = vec![0.0; samples.len()];
-    let mut merge_targets = vec![0;   samples.len()];
-    let mut merge_updates = vec![0.0; samples.len()];
-    for n in 0..samples.len() {
-        // Compute merge_updates - the lowest level at which i can merge to the right with n.
-        {
-            // By definition, i can only merge with n when height is at least equal to their
-            // dissimilarity.
-            for i in 0..n {
-                merge_updates[i] = dissimilarity(&samples[i], &samples[n]);
-            }
+    let mut pis     = vec![0;   samples.len()];
+    let mut lambdas = vec![0.0; samples.len()];
+    let mut ms      = vec![0.0; samples.len()];
 
-            // Note we have i merge with merge_targets[i] at merge_heights[i] without considering n.
-            // Hence, we have the following bounds
-            //  - merge_updates[merge_targets[i]] >= merge_updates[i]                or merge_updates[merge_targets[i]] <= merge_heights[i] i.e. merge target can only merge with n either 1: after you               merge with n 2: before you merge with it
-            //  - merge_updates[i]                >= merge_updates[merge_targets[i]] or merge_updates[i]                <= merge_heights[i] i.e. you          can only merge with n either 1: after your merge target merge with n 2: before you merge with your merge target
-            for _ in 0..2 {
-                for i in 0..n {
-                    if merge_updates[i] >= merge_heights[i] && merge_updates[merge_targets[i]] >= merge_heights[i] {
-                        let result = f64::max(merge_updates[i], merge_updates[merge_targets[i]]);
-                        merge_updates[i]                = result;
-                        merge_updates[merge_targets[i]] = result;
-                    }
-                }
+    // First element is special
+    pis[0] = 0;
+    lambdas[0] = f64::INFINITY;
+
+    for n in 1..samples.len() {
+        // Step 1:
+        pis[n] = n;
+        lambdas[n] = f64::INFINITY;
+
+        // Step 2:
+        for i in 0..n {
+            ms[i] = dissimilarity(&samples[i], &samples[n]);
+        }
+
+        // Step 3:
+        for i in 0..n {
+            if lambdas[i] < ms[i] {
+                ms[pis[i]] = ms[pis[i]].max(ms[i]);
+                ms[i] = f64::INFINITY;
             }
         }
 
-        {
-            // Initialization
-            merge_heights[n] = f64::INFINITY;
-            merge_targets[n] = n;
+        // Step 4:
+        let mut a = n-1;
 
-            // We have to merge with n either:
-            //  - We can merge with before our original merge target
-            //  - Our merge target merge to n before we merge to them.
-            for i in (0..n).rev() {
-                if merge_heights[i] >= merge_updates[i] || merge_heights[i] >= merge_updates[merge_targets[i]] {
-                    merge_heights[i] = merge_updates[i];
-                    merge_targets[i] = n;
+        // Step 5:
+        for i in (0..n).rev() {
+            if lambdas[i] >= ms[pis[i]] {
+                if ms[i] < ms[a] { a = i; }
+            } else {
+                ms[i] = f64::INFINITY;
+            }
+        }
+
+        // Step 6:
+        let mut b = pis[a];
+        let mut c = lambdas[a];
+        pis[a] = n;
+        lambdas[a] = ms[a];
+
+        // Step 7:
+        if a < n-1 {
+            while b < n-1 {
+                let d = pis[b];
+                let e = lambdas[b];
+
+                pis[b] = n;
+                lambdas[b] = c;
+
+                b = d;
+                c = e;
+            }
+
+            if b == n-1 {
+                pis[b] = n;
+                lambdas[b] = c;
+            }
+        }
+
+        // Step 8:
+        for i in 0..n {
+            if pis[pis[i]] == n {
+                if lambdas[i] >= lambdas[pis[i]] {
+                    pis[i] = n;
                 }
             }
         }
     }
 
     Dendrogram::new(
-        merge_heights,
-        merge_targets,
+        lambdas,
+        pis,
     )
 }
 
