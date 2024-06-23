@@ -35,9 +35,16 @@ pub fn main() {
 
     eprintln!("  Press C-k for k-means clustering.");
     eprintln!("  Press C-g for gaussian mixture model.");
+
     eprintln!("  Press C-p for affinity propagation");
     eprintln!("  Press C-d for dbscan(Density-based spatial clustering of applications with noise)");
-    eprintln!("  Press C-s for single linkage clustering.");
+
+    eprintln!("  Press C-S for single linkage clustering.");
+    eprintln!("  Press C-C for complete linkage clustering.");
+    eprintln!("  Press C-A for average linkage clustering.");
+
+    eprintln!("  Press C-s for SLINK clustering.");
+    eprintln!("  Press C-c for CLINK clustering (The results look bad for whatever reason!!!).");
 
     eprintln!("  Press t to to start/stop stepping through the algorithm automatically");
     eprintln!("  Press s to step through the algorithm.");
