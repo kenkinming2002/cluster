@@ -5,7 +5,7 @@ use rand::prelude::*;
 
 use clap::ValueEnum;
 
-#[derive(Debug, Copy, Clone, ValueEnum)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum)]
 pub enum ClusterInit {
     Llyod,
     KMeanPlusPlus,

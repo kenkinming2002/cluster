@@ -1,0 +1,12 @@
+[package]
+name = "posterize-gui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+eframe = "0.28.1"
+image = "0.25.1"
+math = { version = "0.1.0", path = "../math" }
+posterize = { version = "0.1.0", path = "../posterize" }
+rfd = "0.14.1"

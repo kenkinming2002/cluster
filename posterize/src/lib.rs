@@ -16,7 +16,7 @@ use std::num::NonZero;
 /// While there are many more clustering algorithm implemented in the cluster crate, only kmeans
 /// and gaussian mixture are supported because other algorithm are computational infeasible (At
 /// least in my implementation).
-#[derive(Debug, Clone, Copy, Subcommand)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Subcommand)]
 pub enum PosterizeMethod {
     KMeans { cluster_init : ClusterInit, cluster_count : NonZero<usize>, },
     GaussianMixture { cluster_init : ClusterInit, cluster_count : NonZero<usize>, },
