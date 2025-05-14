@@ -16,12 +16,12 @@ pub struct PosterizePlugin {
 
 impl PosterizePlugin {
     fn posterize_method(&self) -> Option<PosterizeMethod> {
-        if self.cluster_method.as_c_str() == c"llyod" {
+        if self.cluster_method.as_c_str() == c"k-means" {
             Some(PosterizeMethod::KMeans {
                 cluster_init : self.init()?,
                 cluster_count : self.cluster_count()?,
             })
-        } else if self.cluster_method.as_c_str() == c"k-means" {
+        } else if self.cluster_method.as_c_str() == c"gaussian-mixture" {
             Some(PosterizeMethod::GaussianMixture {
                 cluster_init : self.init()?,
                 cluster_count : self.cluster_count()?,
@@ -34,7 +34,7 @@ impl PosterizePlugin {
     fn init(&self) -> Option<ClusterInit> {
         if self.cluster_init.as_c_str() == c"llyod" {
             Some(ClusterInit::Llyod)
-        } else if self.cluster_init.as_c_str() == c"k-means" {
+        } else if self.cluster_init.as_c_str() == c"k-means++" {
             Some(ClusterInit::KMeanPlusPlus)
         } else {
             None
